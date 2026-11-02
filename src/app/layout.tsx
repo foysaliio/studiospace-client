@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
 import { Geist } from "next/font/google";
+import type { ReactNode } from "react";
 
+import { SiteNavbar } from "@/components/shared/site-navbar";
 import "./globals.css";
 
 const geist = Geist({
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en" className={geist.variable}>
       <body className="min-h-dvh bg-background font-sans text-foreground antialiased">
+        <SiteNavbar />
         {children}
       </body>
     </html>
