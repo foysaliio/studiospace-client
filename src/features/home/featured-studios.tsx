@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight, Star } from "lucide-react";
 
-type Studio = {
+export type Studio = {
   _id: string;
   title: string;
   category: string;
@@ -15,7 +15,7 @@ type Studio = {
 
 const gridClass = "grid gap-x-6 gap-y-9 sm:grid-cols-2 lg:grid-cols-3";
 
-function StudioCard({ studio }: { studio: Studio }) {
+export function StudioCard({ studio }: { studio: Studio }) {
   return (
     <article className="min-w-0">
       <Link
