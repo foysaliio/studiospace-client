@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import type { Studio } from "@/features/home/featured-studios";
+import StudioGallery from "./studio-gallery";
 
 type StudioDetails = Studio & {
   overview: string;
@@ -13,6 +13,7 @@ type StudioDetails = Studio & {
   amenities: string[];
   ownerName: string;
   ownerEmail: string;
+  galleryImages?: string[];
 };
 
 type StudioPageProps = {
@@ -77,15 +78,12 @@ export default async function StudioDetailsPage({ params }: StudioPageProps) {
       </header>
 
       <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:gap-12">
-        <div className="relative aspect-[4/3] overflow-hidden rounded-sm bg-muted">
-          <Image
-            src={studio.imageUrl}
-            alt={studio.title}
-            fill
-            sizes="(min-width: 1280px) 700px, (min-width: 1024px) 56vw, 94vw"
-            className="object-cover"
-          />
-        </div>
+        <StudioGallery
+          key={studio._id}
+          title={studio.title}
+          imageUrl={studio.imageUrl}
+          galleryImages={studio.galleryImages}
+        />
 
         <section aria-labelledby="space-heading" className="min-w-0">
           <h2
@@ -104,10 +102,12 @@ export default async function StudioDetailsPage({ params }: StudioPageProps) {
               <dt className="text-muted-foreground">Hourly rate</dt>
               <dd className="font-semibold">${studio.hourlyRate} / hr</dd>
             </div>
+
             <div className="flex items-baseline justify-between gap-4 py-3">
               <dt className="text-muted-foreground">Security deposit</dt>
               <dd>${studio.securityDeposit}</dd>
             </div>
+
             <div className="flex items-baseline justify-between gap-4 py-3">
               <dt className="text-muted-foreground">Maximum capacity</dt>
               <dd>{studio.maxCapacity} people</dd>
