@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import type { ReactNode } from "react";
 
+import { SiteFooter } from "@/components/shared/site-footer";
 import { SiteNavbar } from "@/components/shared/site-navbar";
 import "./globals.css";
 
@@ -19,6 +20,8 @@ export const metadata: Metadata = {
   },
   description:
     "Discover and book creative spaces for photography, filmmaking, podcasting, music, and art. Find the right studio for your next project.",
+  authors: [{ name: "Foysal" }],
+  creator: "Foysal",
 };
 
 type RootLayoutProps = {
@@ -28,9 +31,14 @@ type RootLayoutProps = {
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en" className={geist.variable}>
-      <body className="min-h-dvh bg-background font-sans text-foreground antialiased">
+      <body
+        id="site-start"
+        tabIndex={-1}
+        className="flex min-h-dvh flex-col bg-background font-sans text-foreground antialiased"
+      >
         <SiteNavbar />
-        {children}
+        <div className="min-w-0 flex-1">{children}</div>
+        <SiteFooter />
       </body>
     </html>
   );
