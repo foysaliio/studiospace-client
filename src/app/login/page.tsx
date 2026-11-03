@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Aperture, ArrowUpRight } from "lucide-react";
+import GoogleAuthButton from "@/components/shared/google-auth-button";
 
 import LoginForm from "./login-form";
 
@@ -40,6 +41,10 @@ export default function LoginPage() {
 
         <section aria-label="Account access" className="min-w-0 lg:pt-3">
           <LoginForm />
+
+          <div className="mt-3">
+            <GoogleAuthButton />
+          </div>
 
           <p className="mt-4 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
             New to StudioSpace?

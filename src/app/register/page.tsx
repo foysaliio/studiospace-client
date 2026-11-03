@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Aperture, ArrowUpRight } from "lucide-react";
-
+import GoogleAuthButton from "@/components/shared/google-auth-button";
 import RegisterForm from "./register-form";
 
 export const metadata: Metadata = {
@@ -55,6 +55,10 @@ export default function RegisterPage() {
 
         <section aria-label="Registration form" className="min-w-0 lg:pt-3">
           <RegisterForm />
+
+          <div className="mt-3">
+            <GoogleAuthButton />
+          </div>
 
           <p className="mt-4 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
             Already have an account?
