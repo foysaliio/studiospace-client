@@ -325,15 +325,27 @@ export function SiteNavbar() {
                 aria-expanded={accountOpen}
                 aria-controls="desktop-account-panel"
                 onClick={() => setOpenPanel(accountOpen ? null : "account")}
-                className={`inline-flex min-h-11 items-center gap-2 rounded-sm px-2 text-sm font-medium transition-colors duration-200 hover:bg-muted ${focusStyle}`}
+                className={`group inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-sm px-2 text-sm font-medium text-foreground ${focusStyle}`}
               >
-                <ProfileAvatar user={user} />
-                Account
+                <span
+                  className={`inline-flex rounded-full ring-2 ring-offset-2 ring-offset-background transition-shadow duration-300 ease-in-out motion-reduce:transition-none ${
+                    accountOpen
+                      ? "ring-foreground/30"
+                      : "ring-transparent group-hover:ring-foreground/25"
+                  }`}
+                >
+                  <ProfileAvatar user={user} />
+                </span>
+
+                <span>Account</span>
+
                 <ChevronDown
                   size={14}
                   aria-hidden="true"
-                  className={`transition-transform duration-200 motion-reduce:transition-none ${
-                    accountOpen ? "rotate-180" : ""
+                  className={`shrink-0 transition-[rotate,translate,color] duration-300 ease-in-out motion-reduce:transition-none ${
+                    accountOpen
+                      ? "rotate-180 translate-y-0 text-foreground"
+                      : "rotate-0 translate-y-0 text-muted-foreground motion-safe:group-hover:translate-y-px group-hover:text-foreground"
                   }`}
                 />
               </button>

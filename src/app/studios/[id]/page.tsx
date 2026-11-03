@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { ArrowLeft, Star } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Check, Star } from "lucide-react";
 
 import type { Studio } from "@/features/home/featured-studios";
 import BookingModal from "./booking-modal";
@@ -29,6 +29,15 @@ type Review = {
   comment: string;
 };
 
+const focusStyle =
+  "focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring";
+
+const labelStyle =
+  "text-xs font-medium uppercase tracking-widest text-muted-foreground";
+
+const headingStyle =
+  "font-heading text-2xl leading-tight tracking-tight sm:text-3xl";
+
 async function getStudio(id: string): Promise<StudioDetails> {
   const response = await fetch(
     `${process.env.API_BASE_URL}/api/studios/${encodeURIComponent(id)}`,
@@ -44,6 +53,18 @@ async function getStudio(id: string): Promise<StudioDetails> {
   }
 
   return response.json();
+}
+
+export async function generateMetadata({
+  params,
+}: StudioPageProps): Promise<Metadata> {
+  const { id } = await params;
+  const studio = await getStudio(id);
+
+  return {
+    title: studio.title,
+    description: studio.overview,
+  };
 }
 
 async function StudioReviews({ studioId }: { studioId: string }) {
@@ -62,31 +83,35 @@ async function StudioReviews({ studioId }: { studioId: string }) {
     reviews = await response.json();
   } catch {
     return (
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm leading-6 text-muted-foreground">
         Reviews are unavailable right now. Please try again later.
       </p>
     );
   }
 
   if (reviews.length === 0) {
-    return <p className="text-sm text-muted-foreground">No reviews yet.</p>;
+    return (
+      <p className="text-sm leading-6 text-muted-foreground">No reviews yet.</p>
+    );
   }
 
   return (
-    <ul className="grid gap-x-10 gap-y-6 md:grid-cols-2">
+    <ul className="grid gap-5 sm:grid-cols-2">
       {reviews.map((review) => (
-        <li key={review._id} className="min-w-0 border-t border-border pt-4">
-          <div className="flex items-start justify-between gap-4">
-            <p className="break-words font-medium">{review.reviewerName}</p>
+        <li key={review._id} className="min-w-0">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <p className="break-words text-sm font-semibold">
+              {review.reviewerName}
+            </p>
 
-            <span className="inline-flex shrink-0 items-center gap-1.5 text-sm">
-              <Star size={14} className="fill-current" aria-hidden="true" />
+            <span className="inline-flex items-center gap-1.5 text-sm">
+              <Star size={13} className="fill-current" aria-hidden="true" />
               <span className="sr-only">Rating </span>
               {review.rating} / 5
             </span>
           </div>
 
-          <p className="mt-2 whitespace-pre-line break-words text-sm leading-7 text-muted-foreground">
+          <p className="mt-2 whitespace-pre-line break-words text-sm leading-6 text-muted-foreground">
             {review.comment}
           </p>
         </li>
@@ -99,29 +124,15 @@ function ReviewsSkeleton() {
   return (
     <div role="status">
       <span className="sr-only">Loading reviews</span>
-
       <div
         aria-hidden="true"
-        className="max-w-md space-y-3 motion-safe:animate-pulse"
+        className="max-w-sm space-y-2 motion-safe:animate-pulse"
       >
-        <div className="h-4 w-28 rounded-sm bg-muted" />
-        <div className="h-3 w-full rounded-sm bg-muted" />
-        <div className="h-3 w-2/3 rounded-sm bg-muted" />
+        <div className="h-4 w-24 rounded-sm bg-muted" />
+        <div className="h-3 w-3/4 rounded-sm bg-muted" />
       </div>
     </div>
   );
-}
-
-export async function generateMetadata({
-  params,
-}: StudioPageProps): Promise<Metadata> {
-  const { id } = await params;
-  const studio = await getStudio(id);
-
-  return {
-    title: studio.title,
-    description: studio.overview,
-  };
 }
 
 export default async function StudioDetailsPage({ params }: StudioPageProps) {
@@ -129,115 +140,139 @@ export default async function StudioDetailsPage({ params }: StudioPageProps) {
   const studio = await getStudio(id);
 
   return (
-    <main className="site-container py-8 sm:py-12 md:py-16">
+    <main className="site-container min-w-0 pb-10 pt-2 sm:pb-14 sm:pt-4 lg:pb-16">
       <Link
         href="/studios"
-        className="mb-5 inline-flex min-h-11 items-center gap-2 rounded-sm text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+        className={`group mb-2 inline-flex min-h-11 items-center gap-2 rounded-sm text-sm text-muted-foreground transition-colors duration-200 hover:text-foreground sm:mb-3 ${focusStyle}`}
       >
-        <ArrowLeft size={16} aria-hidden="true" />
+        <ArrowLeft
+          size={15}
+          aria-hidden="true"
+          className="motion-safe:transition-transform motion-safe:duration-200 motion-safe:group-hover:-translate-x-0.5"
+        />
         Explore studios
       </Link>
 
-      <header className="mb-7 md:mb-9">
-        <p className="mb-3 text-xs font-medium uppercase tracking-widest text-muted-foreground">
-          {studio.category}
-        </p>
+      <StudioGallery
+        key={studio._id}
+        title={studio.title}
+        category={studio.category}
+        location={studio.location}
+        imageUrl={studio.imageUrl}
+        galleryImages={studio.galleryImages}
+      />
 
-        <h1 className="font-heading text-4xl leading-tight tracking-tight sm:text-5xl">
-          {studio.title}
-        </h1>
+      <section
+        aria-label="Booking information"
+        className="mt-4 grid items-center gap-5 rounded-sm bg-secondary px-4 py-5 text-secondary-foreground sm:px-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-x-12 lg:px-8"
+      >
+        <dl className="grid min-w-0 grid-cols-3 gap-x-3 gap-y-1 sm:gap-x-6">
+          {[
+            { label: "Hourly rate", value: `$${studio.hourlyRate}` },
+            {
+              label: "Capacity",
+              value: `${studio.maxCapacity} ${studio.maxCapacity === 1 ? "person" : "people"}`,
+            },
+            { label: "Security deposit", value: `$${studio.securityDeposit}` },
+          ].map(({ label, value }) => (
+            <div
+              key={label}
+              className="row-span-2 grid min-w-0 grid-rows-subgrid"
+            >
+              <dt className="self-end text-xs leading-4 text-muted-foreground">
+                {label}
+              </dt>
+              <dd className="font-heading text-xl leading-7 tracking-tight tabular-nums sm:text-2xl sm:leading-8">
+                {value}
+              </dd>
+            </div>
+          ))}
+        </dl>
 
-        <p className="mt-3 text-sm text-muted-foreground sm:text-base">
-          {studio.location}
-        </p>
-      </header>
+        <div className="min-w-0 sm:justify-self-end">
+          <BookingModal
+            key={studio._id}
+            title={studio.title}
+            hourlyRate={studio.hourlyRate}
+            securityDeposit={studio.securityDeposit}
+          />
+        </div>
+      </section>
 
-      <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:gap-12">
-        <StudioGallery
-          key={studio._id}
-          title={studio.title}
-          imageUrl={studio.imageUrl}
-          galleryImages={studio.galleryImages}
-        />
-
-        <section aria-labelledby="space-heading" className="min-w-0">
-          <h2
-            id="space-heading"
-            className="font-heading text-3xl tracking-tight"
-          >
+      <div className="grid min-w-0 gap-7 py-8 sm:gap-9 sm:py-10 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:gap-16 lg:py-12">
+        <section aria-labelledby="about-heading" className="min-w-0">
+          <h2 id="about-heading" className={headingStyle}>
             About the space
           </h2>
 
-          <p className="mt-3 text-sm leading-7 text-muted-foreground sm:text-base">
+          <p className="mt-3 max-w-prose whitespace-pre-line break-words text-base leading-7 text-muted-foreground">
             {studio.overview}
           </p>
 
-          <dl className="mt-6 divide-y divide-border border-y border-border text-sm">
-            <div className="flex items-baseline justify-between gap-4 py-3">
-              <dt className="text-muted-foreground">Hourly rate</dt>
-              <dd className="font-semibold">${studio.hourlyRate} / hr</dd>
-            </div>
+          <div className="mt-6">
+            <p className={labelStyle}>Your host</p>
 
-            <div className="flex items-baseline justify-between gap-4 py-3">
-              <dt className="text-muted-foreground">Security deposit</dt>
-              <dd>${studio.securityDeposit}</dd>
-            </div>
+            <p className="mt-1 break-words font-heading text-xl tracking-tight">
+              {studio.ownerName}
+            </p>
 
-            <div className="flex items-baseline justify-between gap-4 py-3">
-              <dt className="text-muted-foreground">Maximum capacity</dt>
-              <dd>{studio.maxCapacity} people</dd>
-            </div>
-          </dl>
-
-          <div className="mt-5">
-            <BookingModal
-              key={studio._id}
-              title={studio.title}
-              hourlyRate={studio.hourlyRate}
-              securityDeposit={studio.securityDeposit}
-            />
+            <a
+              href={`mailto:${studio.ownerEmail}`}
+              className={`group inline-flex min-h-11 max-w-full items-center gap-1.5 rounded-sm text-sm text-muted-foreground transition-colors duration-200 hover:text-foreground ${focusStyle}`}
+            >
+              <span className="min-w-0 break-all">{studio.ownerEmail}</span>
+              <ArrowUpRight
+                size={14}
+                aria-hidden="true"
+                className="shrink-0 motion-safe:transition-transform motion-safe:duration-200 motion-safe:group-hover:-translate-y-0.5 motion-safe:group-hover:translate-x-0.5"
+              />
+            </a>
           </div>
+        </section>
 
-          <h2 className="mt-7 font-heading text-2xl">Amenities</h2>
+        <section aria-labelledby="amenities-heading" className="min-w-0">
+          <h2 id="amenities-heading" className={headingStyle}>
+            Amenities
+          </h2>
+
           {studio.amenities.length > 0 ? (
-            <ul className="mt-3 flex flex-wrap gap-2">
+            <ul className="mt-2 divide-y divide-border">
               {studio.amenities.map((amenity) => (
                 <li
                   key={amenity}
-                  className="rounded-sm bg-muted px-3 py-1.5 text-sm"
+                  className="flex items-baseline justify-between gap-3 py-2.5 text-sm leading-6"
                 >
-                  {amenity}
+                  <span className="min-w-0 break-words">{amenity}</span>
+                  <Check
+                    size={15}
+                    strokeWidth={1.6}
+                    aria-hidden="true"
+                    className="shrink-0 self-center text-muted-foreground"
+                  />
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p className="mt-3 text-sm text-muted-foreground">
               No amenities listed yet.
             </p>
           )}
-
-          <h2 className="mt-7 font-heading text-2xl">Your host</h2>
-          <p className="mt-2 text-sm font-medium">{studio.ownerName}</p>
-          <p className="mt-1 break-words text-sm text-muted-foreground">
-            {studio.ownerEmail}
-          </p>
         </section>
       </div>
 
       <section
         aria-labelledby="reviews-heading"
-        className="mt-10 border-t border-border pt-7 sm:mt-14 sm:pt-9"
+        className="grid min-w-0 gap-3 border-t border-border pt-6 sm:grid-cols-[10rem_minmax(0,1fr)] sm:items-baseline sm:gap-6"
       >
-        <h2
-          id="reviews-heading"
-          className="mb-4 font-heading text-3xl tracking-tight"
-        >
+        <h2 id="reviews-heading" className={headingStyle}>
           Reviews
         </h2>
 
-        <Suspense key={studio._id} fallback={<ReviewsSkeleton />}>
-          <StudioReviews studioId={studio._id} />
-        </Suspense>
+        <div className="min-w-0">
+          <Suspense key={studio._id} fallback={<ReviewsSkeleton />}>
+            <StudioReviews studioId={studio._id} />
+          </Suspense>
+        </div>
       </section>
     </main>
   );

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRef, useState } from "react";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, MapPin } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import type { Swiper as SwiperInstance } from "swiper";
 
@@ -10,15 +10,19 @@ import "swiper/css";
 
 type StudioGalleryProps = {
   title: string;
+  category: string;
+  location: string;
   imageUrl: string;
   galleryImages?: string[];
 };
 
 const arrowStyle =
-  "inline-flex size-11 items-center justify-center rounded-full border border-input text-foreground transition-colors duration-200 enabled:hover:border-primary enabled:hover:bg-primary enabled:hover:text-primary-foreground disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring motion-reduce:transition-none";
+  "inline-flex size-11 cursor-pointer items-center justify-center rounded-full border border-border text-foreground transition-colors duration-200 enabled:hover:border-foreground enabled:hover:bg-foreground enabled:hover:text-background disabled:cursor-default disabled:opacity-35 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none";
 
 export default function StudioGallery({
   title,
+  category,
+  location,
   imageUrl,
   galleryImages = [],
 }: StudioGalleryProps) {
@@ -26,58 +30,74 @@ export default function StudioGallery({
   const [activeIndex, setActiveIndex] = useState(0);
 
   const images = [...new Set([imageUrl, ...galleryImages].filter(Boolean))];
-  const hasMultipleImages = images.length > 1;
-
-  if (images.length === 0) {
-    return (
-      <div className="grid aspect-[4/3] place-items-center rounded-sm bg-muted text-sm text-muted-foreground">
-        No studio photos available.
-      </div>
-    );
-  }
+  const hasGallery = images.length > 1;
 
   return (
-    <section aria-label={`${title} photo gallery`} className="min-w-0">
-      <Swiper
-        slidesPerView={1}
-        rewind={false}
-        allowTouchMove={hasMultipleImages}
-        speed={350}
-        onSwiper={(swiper) => {
-          swiperRef.current = swiper;
+    <section aria-label={`${title} studio gallery`} className="min-w-0">
+      <div className="relative isolate grid overflow-hidden rounded-sm bg-neutral-900 text-white">
+        {images.length > 0 && (
+          <Swiper
+            slidesPerView={1}
+            allowTouchMove={hasGallery}
+            rewind={false}
+            speed={350}
+            onSwiper={(swiper) => {
+              swiperRef.current = swiper;
 
-          if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-            swiper.params.speed = 0;
-          }
-        }}
-        onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
-        className="aspect-[4/3] w-full rounded-sm bg-muted"
-      >
-        {images.map((src, index) => (
-          <SwiperSlide key={src}>
-            <div className="relative h-full w-full">
-              <Image
-                src={src}
-                alt={`${title}, photo ${index + 1}`}
-                fill
-                loading={index === 0 ? "eager" : "lazy"}
-                sizes="(min-width: 1280px) 700px, (min-width: 1024px) 56vw, 94vw"
-                className="object-cover"
-              />
-            </div>
-          </SwiperSlide>
-        ))}
-      </Swiper>
+              if (
+                window.matchMedia("(prefers-reduced-motion: reduce)").matches
+              ) {
+                swiper.params.speed = 0;
+              }
+            }}
+            onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
+            className="absolute! inset-0 h-full w-full"
+          >
+            {images.map((src, index) => (
+              <SwiperSlide key={src}>
+                <Image
+                  src={src}
+                  alt={`${title}, studio photo ${index + 1}`}
+                  fill
+                  loading={index === 0 ? "eager" : "lazy"}
+                  sizes="(min-width: 1280px) 1152px, 100vw"
+                  className="object-cover object-center"
+                />
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        )}
 
-      {hasMultipleImages && (
-        <div className="mt-4 flex items-center justify-between sm:mt-6">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-10 bg-linear-to-t from-black/90 via-black/25 to-transparent"
+        />
+
+        <header className="pointer-events-none relative z-20 flex min-h-64 flex-col justify-end p-5 sm:min-h-80 sm:p-8 lg:min-h-[25rem] lg:p-10">
+          <p className="text-xs font-medium uppercase tracking-widest text-white/85">
+            {category}
+          </p>
+
+          <h1 className="mt-2 max-w-[22ch] break-words font-heading text-4xl leading-[1.04] tracking-tight sm:text-5xl lg:text-6xl">
+            {title}
+          </h1>
+
+          <p className="mt-3 flex items-start gap-1.5 text-sm leading-5 text-white/90">
+            <MapPin size={15} aria-hidden="true" className="mt-0.5 shrink-0" />
+            {location}
+          </p>
+        </header>
+      </div>
+
+      {hasGallery && (
+        <div className="mt-3 flex items-center justify-between gap-4">
           <p
             aria-live="polite"
             aria-atomic="true"
-            className="text-sm tabular-nums text-muted-foreground"
+            className="text-xs tabular-nums text-muted-foreground"
           >
-            <span className="sr-only">Photo </span>
-            <span className="font-medium text-foreground">
+            Studio photos
+            <span className="ml-2 font-medium text-foreground">
               {String(activeIndex + 1).padStart(2, "0")}
             </span>
             {" / "}
@@ -92,7 +112,7 @@ export default function StudioGallery({
               onClick={() => swiperRef.current?.slidePrev()}
               className={arrowStyle}
             >
-              <ArrowLeft size={18} aria-hidden="true" />
+              <ArrowLeft size={16} aria-hidden="true" />
             </button>
 
             <button
@@ -102,7 +122,7 @@ export default function StudioGallery({
               onClick={() => swiperRef.current?.slideNext()}
               className={arrowStyle}
             >
-              <ArrowRight size={18} aria-hidden="true" />
+              <ArrowRight size={16} aria-hidden="true" />
             </button>
           </div>
         </div>
