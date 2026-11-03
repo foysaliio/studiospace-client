@@ -69,7 +69,7 @@ export default function LoginForm() {
         }
 
         const message =
-          "If an account uses this email, check its inbox for a reset link.";
+          "Check your inbox for a reset link.";
 
         setNotice(message);
         toast.success(message);
