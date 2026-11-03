@@ -20,6 +20,9 @@ const focusStyle =
 const buttonStyle =
   "inline-flex min-h-11 items-center justify-center rounded-md border px-5 text-sm font-medium transition-colors duration-200 motion-reduce:transition-none";
 
+const menuIconStyle =
+  "absolute transition-[rotate,scale,opacity] duration-300 ease-in-out motion-reduce:transition-none";
+
 function AuthLinks() {
   return (
     <>
@@ -66,8 +69,8 @@ export function SiteNavbar() {
       }}
     >
       <div className="site-container flex min-h-16 items-center justify-between gap-4 lg:min-h-20">
-        <div onClick={closeMenu}>
-          <SiteLogo className="font-heading text-2xl tracking-tight" />
+        <div onClick={closeMenu} className="max-lg:flex max-lg:items-center">
+          <SiteLogo className="font-heading text-xl tracking-tight max-lg:h-11 max-lg:gap-1.5 max-lg:leading-none max-lg:[&_svg]:size-[26px] lg:text-2xl" />
         </div>
 
         <nav
@@ -107,45 +110,67 @@ export function SiteNavbar() {
           aria-expanded={menuOpen}
           aria-controls="mobile-navigation"
           onClick={() => setMenuOpen((open) => !open)}
-          className={`inline-flex size-11 items-center justify-center rounded-md border border-border text-foreground transition-colors duration-200 hover:bg-accent lg:hidden ${focusStyle}`}
+          className={`relative inline-flex size-11 shrink-0 items-center justify-center rounded-sm text-foreground lg:hidden ${focusStyle}`}
         >
-          {menuOpen ? (
-            <X size={21} aria-hidden="true" />
-          ) : (
-            <Menu size={21} aria-hidden="true" />
-          )}
+          <Menu
+            size={22}
+            aria-hidden="true"
+            className={`${menuIconStyle} ${
+              menuOpen
+                ? "rotate-90 scale-75 opacity-0"
+                : "rotate-0 scale-100 opacity-100"
+            }`}
+          />
+
+          <X
+            size={22}
+            aria-hidden="true"
+            className={`${menuIconStyle} ${
+              menuOpen
+                ? "rotate-0 scale-100 opacity-100"
+                : "-rotate-90 scale-75 opacity-0"
+            }`}
+          />
         </button>
       </div>
 
       <div
         id="mobile-navigation"
-        hidden={!menuOpen}
-        className="absolute inset-x-0 top-full max-h-[calc(100dvh-4rem)] overflow-y-auto border-b border-border bg-background shadow-sm lg:hidden"
+        inert={!menuOpen}
+        className={`absolute inset-x-0 top-full grid bg-background transition-[grid-template-rows,opacity] duration-300 ease-in-out motion-reduce:transition-none lg:hidden ${
+          menuOpen
+            ? "grid-rows-[1fr] opacity-100"
+            : "pointer-events-none grid-rows-[0fr] opacity-0"
+        }`}
       >
-        <div className="site-container py-4">
-          <nav aria-label="Mobile navigation" className="grid gap-1">
-            {navLinks.map(({ label, href }) => (
-              <Link
-                key={href}
-                href={href}
-                onClick={closeMenu}
-                aria-current={pathname === href ? "page" : undefined}
-                className={`flex min-h-11 items-center rounded-md px-3 text-sm font-medium transition-colors duration-200 hover:bg-accent hover:text-foreground ${focusStyle} ${
-                  isActive(href)
-                    ? "bg-secondary text-foreground"
-                    : "text-muted-foreground"
-                }`}
-              >
-                {label}
-              </Link>
-            ))}
-          </nav>
+        <div className="min-h-0 overflow-hidden">
+          <div className="max-h-[calc(100dvh-4rem)] overflow-y-auto border-b border-border">
+            <div className="site-container py-4">
+              <nav aria-label="Mobile navigation" className="grid gap-1">
+                {navLinks.map(({ label, href }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    onClick={closeMenu}
+                    aria-current={pathname === href ? "page" : undefined}
+                    className={`flex min-h-11 items-center rounded-md px-3 text-sm font-medium transition-colors duration-200 hover:bg-accent hover:text-foreground ${focusStyle} ${
+                      isActive(href)
+                        ? "bg-secondary text-foreground"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    {label}
+                  </Link>
+                ))}
+              </nav>
 
-          <div
-            className="mt-4 grid grid-cols-2 gap-3 border-t border-border pt-4"
-            onClick={closeMenu}
-          >
-            <AuthLinks />
+              <div
+                className="mt-4 grid grid-cols-2 gap-3 border-t border-border pt-4"
+                onClick={closeMenu}
+              >
+                <AuthLinks />
+              </div>
+            </div>
           </div>
         </div>
       </div>
