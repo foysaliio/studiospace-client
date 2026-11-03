@@ -136,12 +136,22 @@ export default function FeaturedStudios() {
       aria-labelledby="featured-heading"
       className="site-container grid grid-cols-1 gap-y-7 py-12 md:grid-cols-[1fr_auto] md:items-center md:gap-x-6 md:gap-y-8 md:py-16"
     >
-      <h2
-        id="featured-heading"
-        className="font-heading text-4xl leading-tight tracking-tight sm:text-5xl md:col-start-1 md:row-start-1"
-      >
-        Featured Studios
-      </h2>
+      <header className="min-w-0 md:col-start-1 md:row-start-1">
+        <p className="mb-3 text-xs font-medium uppercase tracking-widest text-muted-foreground">
+          Studio collection
+        </p>
+
+        <h2
+          id="featured-heading"
+          className="font-heading text-4xl leading-tight tracking-tight sm:text-5xl"
+        >
+          Featured studios
+        </h2>
+
+        <p className="mt-3 max-w-xs text-sm leading-6 text-muted-foreground sm:text-base">
+          Explore the latest additions to StudioSpace.
+        </p>
+      </header>
 
       <div className="min-w-0 md:col-span-2 md:row-start-2">
         <Suspense fallback={<StudioGridSkeleton />}>
@@ -151,7 +161,7 @@ export default function FeaturedStudios() {
 
       <Link
         href="/studios"
-        className="group inline-flex min-h-12 w-full items-center justify-between gap-5 rounded-sm bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/85 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:w-auto sm:justify-center"
+        className="group inline-flex min-h-12 w-fit items-center justify-center gap-5 justify-self-center rounded-sm bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/85 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring md:col-start-2 md:row-start-1 md:justify-self-end"
       >
         Explore all studios
         <ArrowUpRight

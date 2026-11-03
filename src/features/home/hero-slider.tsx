@@ -161,7 +161,7 @@ export function HeroSlider() {
 
           <Link
             href="/studios"
-            className={`group mt-4 inline-flex min-h-12 w-full items-center justify-between gap-5 rounded-sm bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/85 sm:w-auto sm:justify-center lg:mt-7 ${focusStyle}`}
+            className="group mx-auto flex min-h-12 w-fit items-center justify-center gap-5 rounded-sm bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/85 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring lg:mx-0"
           >
             Explore Studios
             <ArrowUpRight
