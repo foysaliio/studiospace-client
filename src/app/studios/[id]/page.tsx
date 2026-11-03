@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { ArrowLeft, Star } from "lucide-react";
 
 import type { Studio } from "@/features/home/featured-studios";
+import BookingModal from "./booking-modal";
 import StudioGallery from "./studio-gallery";
 
 type StudioDetails = Studio & {
@@ -187,6 +188,15 @@ export default async function StudioDetailsPage({ params }: StudioPageProps) {
               <dd>{studio.maxCapacity} people</dd>
             </div>
           </dl>
+
+          <div className="mt-5">
+            <BookingModal
+              key={studio._id}
+              title={studio.title}
+              hourlyRate={studio.hourlyRate}
+              securityDeposit={studio.securityDeposit}
+            />
+          </div>
 
           <h2 className="mt-7 font-heading text-2xl">Amenities</h2>
           {studio.amenities.length > 0 ? (
