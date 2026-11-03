@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import {
   CalendarDays,
+  Check,
   ChevronDown,
   LayoutDashboard,
   List,
@@ -22,44 +24,105 @@ const focusStyle =
 
 export default function WorkspaceNav() {
   const pathname = usePathname();
-  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const mobileNav = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
 
-  const activeHref = pathname.startsWith("/studios/edit/")
+  const sectionPath = pathname.startsWith("/studios/edit/")
     ? "/my-listings"
-    : links.find(
-        ({ href }) => pathname === href || pathname.startsWith(`${href}/`),
-      )?.href;
+    : pathname;
+
+  const activeLink = links.find(
+    ({ href }) => sectionPath === href || sectionPath.startsWith(`${href}/`),
+  );
+
+  useEffect(() => {
+    if (!open) return;
+
+    function closeOnOutsidePress(event: PointerEvent) {
+      if (
+        event.target instanceof Node &&
+        !mobileNav.current?.contains(event.target)
+      ) {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener("pointerdown", closeOnOutsidePress);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePress);
+    };
+  }, [open]);
 
   return (
-    <aside className="min-w-0 lg:self-start lg:sticky lg:top-28">
+    <aside className="min-w-0 lg:sticky lg:top-28 lg:self-start">
       <nav aria-label="Workspace navigation">
-        <div className="flex items-center justify-between gap-3 rounded-sm bg-secondary px-3 py-1 lg:hidden">
-          <label
-            htmlFor="workspace-destination"
-            className="shrink-0 text-xs font-medium uppercase tracking-widest text-muted-foreground"
+        <div
+          ref={mobileNav}
+          className="relative lg:hidden"
+          onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) {
+              setOpen(false);
+            }
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Escape" && open) {
+              setOpen(false);
+              trigger.current?.focus();
+            }
+          }}
+        >
+          <button
+            ref={trigger}
+            type="button"
+            aria-expanded={open}
+            aria-controls="workspace-page-links"
+            onClick={() => setOpen((current) => !current)}
+            className={`flex min-h-12 w-full items-center justify-between gap-4 rounded-sm border-b border-border px-3 text-left transition-colors duration-200 hover:bg-secondary motion-reduce:transition-none ${focusStyle} ${
+              open ? "bg-secondary" : "bg-secondary/50"
+            }`}
           >
-            Go to
-          </label>
+            <span className="shrink-0 text-xs text-muted-foreground">
+              Workspace
+            </span>
 
-          <div className="relative min-w-0">
-            <select
-              id="workspace-destination"
-              value={activeHref ?? "/dashboard"}
-              onChange={(event) => router.push(event.target.value)}
-              className={`min-h-11 max-w-full cursor-pointer appearance-none rounded-sm bg-secondary pl-2 pr-7 text-sm font-medium text-secondary-foreground ${focusStyle}`}
-            >
-              {links.map(({ label, href }) => (
-                <option key={href} value={href}>
-                  {label}
-                </option>
-              ))}
-            </select>
+            <span className="inline-flex min-w-0 items-center justify-end gap-2 text-right text-sm font-medium text-foreground">
+              <span>{activeLink?.label ?? "Choose page"}</span>
+              <ChevronDown
+                size={16}
+                aria-hidden="true"
+                className={`shrink-0 transition-transform duration-200 motion-reduce:transition-none ${
+                  open ? "rotate-180" : ""
+                }`}
+              />
+            </span>
+          </button>
 
-            <ChevronDown
-              size={15}
-              aria-hidden="true"
-              className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2"
-            />
+          <div
+            id="workspace-page-links"
+            inert={!open}
+            className={`absolute inset-x-0 top-full z-30 mt-1 rounded-sm border border-border bg-popover p-1 text-popover-foreground shadow-md transition-[opacity,translate] duration-150 ease-out motion-reduce:transition-none ${
+              open
+                ? "translate-y-0 opacity-100"
+                : "pointer-events-none -translate-y-1 opacity-0"
+            }`}
+          >
+            {links.map(({ label, href }) => (
+              <Link
+                key={href}
+                href={href}
+                aria-current={pathname === href ? "page" : undefined}
+                onClick={() => setOpen(false)}
+                className={`flex min-h-11 items-center justify-between gap-3 rounded-sm px-3 text-sm transition-colors duration-150 hover:bg-accent ${focusStyle} ${
+                  activeLink?.href === href ? "bg-secondary font-medium" : ""
+                }`}
+              >
+                {label}
+                {activeLink?.href === href && (
+                  <Check size={15} aria-hidden="true" />
+                )}
+              </Link>
+            ))}
           </div>
         </div>
 
@@ -69,26 +132,22 @@ export default function WorkspaceNav() {
           </p>
 
           <ul className="grid gap-1">
-            {links.map(({ label, href, icon: Icon }) => {
-              const active = activeHref === href;
-
-              return (
-                <li key={href}>
-                  <Link
-                    href={href}
-                    aria-current={pathname === href ? "page" : undefined}
-                    className={`flex min-h-11 items-center gap-3 rounded-sm px-3 text-sm font-medium transition-colors duration-200 ${focusStyle} ${
-                      active
-                        ? "bg-foreground text-background"
-                        : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                    }`}
-                  >
-                    <Icon size={16} strokeWidth={1.6} aria-hidden="true" />
-                    {label}
-                  </Link>
-                </li>
-              );
-            })}
+            {links.map(({ label, href, icon: Icon }) => (
+              <li key={href}>
+                <Link
+                  href={href}
+                  aria-current={pathname === href ? "page" : undefined}
+                  className={`flex min-h-11 items-center gap-3 rounded-sm px-3 text-sm font-medium transition-colors duration-200 ${focusStyle} ${
+                    activeLink?.href === href
+                      ? "bg-foreground text-background"
+                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  }`}
+                >
+                  <Icon size={16} strokeWidth={1.6} aria-hidden="true" />
+                  {label}
+                </Link>
+              </li>
+            ))}
           </ul>
         </div>
       </nav>
