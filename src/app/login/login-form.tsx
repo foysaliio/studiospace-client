@@ -18,11 +18,17 @@ function getReturnPath() {
 
   if (!next?.startsWith("/")) return "/";
 
-  const target = new URL(next, current.origin);
+  try {
+    const target = new URL(next, current.origin);
 
-  if (target.origin !== current.origin) return "/";
+    if (target.origin === current.origin && !target.pathname.startsWith("//")) {
+      return target.pathname + target.search + target.hash;
+    }
+  } catch {
+    return "/";
+  }
 
-  return target.pathname + target.search + target.hash;
+  return "/";
 }
 
 export default function LoginForm() {
@@ -58,11 +64,13 @@ export default function LoginForm() {
         });
 
         if (result.error) {
-          throw new Error("Could not request a reset link. Please try again.");
+          setError("Could not request a reset link. Please try again.");
+          return;
         }
 
         const message =
           "If an account uses this email, check its inbox for a reset link.";
+
         setNotice(message);
         toast.success(message);
         return;
@@ -74,143 +82,136 @@ export default function LoginForm() {
       });
 
       if (result.error) {
-        throw new Error(
-          result.error.message || "Could not log in. Please try again.",
-        );
+        setError(result.error.message || "Could not log in. Please try again.");
+        return;
       }
 
       toast.success("Welcome back!");
       router.replace(getReturnPath());
       router.refresh();
-
-      router.replace(getReturnPath());
-      router.refresh();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Please try again.";
-      setError(message);
+    } catch {
+      setError("Could not reach StudioSpace. Please try again.");
     } finally {
       setPending(false);
     }
   }
 
+  let buttonLabel = pending ? "Logging in…" : "Log in";
+
+  if (resetMode) {
+    buttonLabel = pending ? "Requesting link…" : "Send reset link";
+  }
+
   return (
-    <>
-      <form onSubmit={handleSubmit} aria-busy={pending} className="grid gap-5">
-        {resetMode && (
-          <div>
-            <h2 className="font-heading text-3xl tracking-tight">
-              Reset your password
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Enter the email address you use for StudioSpace.
-            </p>
-          </div>
-        )}
-
+    <form onSubmit={handleSubmit} aria-busy={pending} className="grid gap-5">
+      {resetMode && (
         <div>
-          <label
-            htmlFor="login-email"
-            className="mb-2 block text-sm font-medium"
-          >
-            Email address
-          </label>
-          <input
-            id="login-email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            placeholder="you@example.com"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-            className={inputStyle}
-          />
+          <h2 className="font-heading text-3xl tracking-tight">
+            Reset your password
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            Enter the email address you use for StudioSpace.
+          </p>
         </div>
+      )}
 
-        {!resetMode && (
-          <div>
-            <div className="flex flex-wrap items-center justify-between gap-x-3">
-              <label htmlFor="login-password" className="text-sm font-medium">
-                Password
-              </label>
-              <button
-                type="button"
-                disabled={pending}
-                onClick={() => switchMode(true)}
-                className={`inline-flex min-h-11 items-center rounded-sm text-sm text-muted-foreground transition-colors duration-200 hover:text-foreground ${focusStyle}`}
-              >
-                Forgot password?
-              </button>
-            </div>
+      <div>
+        <label htmlFor="login-email" className="mb-2 block text-sm font-medium">
+          Email address
+        </label>
+        <input
+          id="login-email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          placeholder="you@example.com"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          required
+          className={inputStyle}
+        />
+      </div>
 
-            <div className="relative">
-              <input
-                id="login-password"
-                name="password"
-                type={showPassword ? "text" : "password"}
-                autoComplete="current-password"
-                required
-                className={`${inputStyle} pr-14`}
-              />
-              <button
-                type="button"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-                aria-controls="login-password"
-                onClick={() => setShowPassword((visible) => !visible)}
-                className={`absolute inset-y-0 right-1 my-auto grid size-11 place-items-center rounded-sm text-muted-foreground transition-colors hover:text-foreground ${focusStyle}`}
-              >
-                {showPassword ? (
-                  <EyeOff size={18} aria-hidden="true" />
-                ) : (
-                  <Eye size={18} aria-hidden="true" />
-                )}
-              </button>
-            </div>
+      {!resetMode && (
+        <div>
+          <div className="flex flex-wrap items-center justify-between gap-x-3">
+            <label htmlFor="login-password" className="text-sm font-medium">
+              Password
+            </label>
+
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => switchMode(true)}
+              className={`inline-flex min-h-11 items-center rounded-sm text-sm text-muted-foreground transition-colors duration-200 hover:text-foreground ${focusStyle}`}
+            >
+              Forgot password?
+            </button>
           </div>
-        )}
 
-        {error && (
-          <p role="alert" className="text-sm text-destructive">
-            {error}
-          </p>
-        )}
-        {notice && (
-          <p role="status" className="text-sm text-foreground">
-            {notice}
-          </p>
-        )}
+          <div className="relative">
+            <input
+              id="login-password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              required
+              className={`${inputStyle} pr-14`}
+            />
 
+            <button
+              type="button"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              aria-controls="login-password"
+              onClick={() => setShowPassword((visible) => !visible)}
+              className={`absolute inset-y-0 right-1 my-auto grid size-11 place-items-center rounded-sm text-muted-foreground transition-colors hover:text-foreground ${focusStyle}`}
+            >
+              {showPassword ? (
+                <EyeOff size={18} aria-hidden="true" />
+              ) : (
+                <Eye size={18} aria-hidden="true" />
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
+
+      {notice && (
+        <p role="status" className="text-sm text-foreground">
+          {notice}
+        </p>
+      )}
+
+      <button
+        type="submit"
+        disabled={pending}
+        className={`group inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-sm bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors duration-200 enabled:hover:bg-primary/85 disabled:opacity-60 ${focusStyle}`}
+      >
+        {buttonLabel}
+        <ArrowUpRight
+          size={17}
+          aria-hidden="true"
+          className="motion-safe:transition-transform motion-safe:duration-200 motion-safe:group-hover:-translate-y-0.5 motion-safe:group-hover:translate-x-0.5"
+        />
+      </button>
+
+      {resetMode && (
         <button
-          type="submit"
+          type="button"
           disabled={pending}
-          className={`group inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-sm bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors duration-200 enabled:hover:bg-primary/85 disabled:opacity-60 ${focusStyle}`}
+          onClick={() => switchMode(false)}
+          className={`inline-flex min-h-11 w-fit items-center gap-2 rounded-sm text-sm text-muted-foreground transition-colors hover:text-foreground ${focusStyle}`}
         >
-          {resetMode
-            ? pending
-              ? "Requesting link…"
-              : "Send reset link"
-            : pending
-              ? "Logging in…"
-              : "Log in"}
-          <ArrowUpRight
-            size={17}
-            aria-hidden="true"
-            className="motion-safe:transition-transform motion-safe:duration-200 motion-safe:group-hover:-translate-y-0.5 motion-safe:group-hover:translate-x-0.5"
-          />
+          <ArrowLeft size={15} aria-hidden="true" />
+          Back to login
         </button>
-
-        {resetMode && (
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() => switchMode(false)}
-            className={`inline-flex min-h-11 w-fit items-center gap-2 rounded-sm text-sm text-muted-foreground transition-colors hover:text-foreground ${focusStyle}`}
-          >
-            <ArrowLeft size={15} aria-hidden="true" />
-            Back to login
-          </button>
-        )}
-      </form>
-    </>
+      )}
+    </form>
   );
 }

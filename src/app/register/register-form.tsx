@@ -58,135 +58,127 @@ export default function RegisterForm() {
       });
 
       if (result.error) {
-        const message =
-          result.error.message || "Registration failed. Please try again.";
-
-        setError(message);
-        toast.error(message);
+        setError(
+          result.error.message || "Registration failed. Please try again.",
+        );
         setPending(false);
         return;
       }
 
       toast.success("Registration complete. Please log in.");
       router.replace("/login");
-
-      router.replace("/login");
     } catch {
-      const message = "Could not reach StudioSpace. Please try again.";
-      setError(message);
-      toast.error(message);
+      setError("Could not reach StudioSpace. Please try again.");
       setPending(false);
     }
   }
 
   return (
-    <>
-      <form onSubmit={handleSubmit} aria-busy={pending} className="grid gap-5">
-        <div>
-          <label htmlFor="register-name" className={labelStyle}>
-            Full name
-          </label>
+    <form onSubmit={handleSubmit} aria-busy={pending} className="grid gap-5">
+      <div>
+        <label htmlFor="register-name" className={labelStyle}>
+          Full name
+        </label>
+        <input
+          id="register-name"
+          name="name"
+          autoComplete="name"
+          placeholder="Your full name"
+          required
+          className={inputStyle}
+        />
+      </div>
+
+      <div>
+        <label htmlFor="register-email" className={labelStyle}>
+          Email address
+        </label>
+        <input
+          id="register-email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          placeholder="you@example.com"
+          required
+          className={inputStyle}
+        />
+      </div>
+
+      <div>
+        <label htmlFor="register-image" className={labelStyle}>
+          Photo URL
+        </label>
+        <input
+          id="register-image"
+          name="image"
+          type="url"
+          pattern="https://.+"
+          title="Enter a photo URL starting with https://"
+          placeholder="https://"
+          required
+          className={inputStyle}
+        />
+      </div>
+
+      <div>
+        <label htmlFor="register-password" className={labelStyle}>
+          Password
+        </label>
+
+        <div className="relative">
           <input
-            id="register-name"
-            name="name"
-            autoComplete="name"
-            placeholder="Your full name"
+            id="register-password"
+            name="password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="new-password"
+            aria-describedby="register-password-hint"
+            placeholder="Create a password"
+            maxLength={128}
             required
-            className={inputStyle}
+            className={`${inputStyle} pr-14`}
           />
-        </div>
 
-        <div>
-          <label htmlFor="register-email" className={labelStyle}>
-            Email address
-          </label>
-          <input
-            id="register-email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            placeholder="you@example.com"
-            required
-            className={inputStyle}
-          />
-        </div>
-
-        <div>
-          <label htmlFor="register-image" className={labelStyle}>
-            Photo URL
-          </label>
-          <input
-            id="register-image"
-            name="image"
-            type="url"
-            pattern="https://.+"
-            title="Enter a photo URL starting with https://"
-            placeholder="https://"
-            required
-            className={inputStyle}
-          />
-        </div>
-
-        <div>
-          <label htmlFor="register-password" className={labelStyle}>
-            Password
-          </label>
-
-          <div className="relative">
-            <input
-              id="register-password"
-              name="password"
-              type={showPassword ? "text" : "password"}
-              autoComplete="new-password"
-              aria-describedby="register-password-hint"
-              placeholder="Create a password"
-              maxLength={128}
-              required
-              className={`${inputStyle} pr-14`}
-            />
-
-            <button
-              type="button"
-              aria-label={showPassword ? "Hide password" : "Show password"}
-              aria-controls="register-password"
-              onClick={() => setShowPassword((visible) => !visible)}
-              className="absolute inset-y-0 right-1 my-auto inline-flex size-11 items-center justify-center rounded-sm text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
-            >
-              {showPassword ? (
-                <EyeOff size={18} aria-hidden="true" />
-              ) : (
-                <Eye size={18} aria-hidden="true" />
-              )}
-            </button>
-          </div>
-
-          <p
-            id="register-password-hint"
-            className="mt-2 text-xs leading-5 text-muted-foreground"
+          <button
+            type="button"
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            aria-controls="register-password"
+            onClick={() => setShowPassword((visible) => !visible)}
+            className="absolute inset-y-0 right-1 my-auto inline-flex size-11 items-center justify-center rounded-sm text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
           >
-            At least 6 characters with one uppercase and one lowercase letter.
-          </p>
+            {showPassword ? (
+              <EyeOff size={18} aria-hidden="true" />
+            ) : (
+              <Eye size={18} aria-hidden="true" />
+            )}
+          </button>
         </div>
 
-        {error && (
-          <p role="alert" className="text-sm leading-6 text-destructive">
-            {error}
-          </p>
-        )}
-
-        <button
-          type="submit"
-          disabled={pending}
-          className="group inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-sm bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors duration-200 enabled:hover:bg-primary/85 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring disabled:opacity-60"
+        <p
+          id="register-password-hint"
+          className="mt-2 text-xs leading-5 text-muted-foreground"
         >
-          {pending ? "Creating account…" : "Create account"}
-          <ArrowUpRight
-            size={17}
-            aria-hidden="true"
-            className="motion-safe:transition-transform motion-safe:duration-200 motion-safe:group-hover:-translate-y-0.5 motion-safe:group-hover:translate-x-0.5"
-          />
-        </button>
-      </form>
-    </>
+          At least 6 characters with one uppercase and one lowercase letter.
+        </p>
+      </div>
+
+      {error && (
+        <p role="alert" className="text-sm leading-6 text-destructive">
+          {error}
+        </p>
+      )}
+
+      <button
+        type="submit"
+        disabled={pending}
+        className="group inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-sm bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors duration-200 enabled:hover:bg-primary/85 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring disabled:opacity-60"
+      >
+        {pending ? "Creating account…" : "Create account"}
+        <ArrowUpRight
+          size={17}
+          aria-hidden="true"
+          className="motion-safe:transition-transform motion-safe:duration-200 motion-safe:group-hover:-translate-y-0.5 motion-safe:group-hover:translate-x-0.5"
+        />
+      </button>
+    </form>
   );
 }
