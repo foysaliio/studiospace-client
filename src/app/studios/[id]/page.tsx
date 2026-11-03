@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { Suspense } from "react";
+import { ArrowLeft, Star } from "lucide-react";
 
 import type { Studio } from "@/features/home/featured-studios";
 import StudioGallery from "./studio-gallery";
@@ -20,6 +21,13 @@ type StudioPageProps = {
   params: Promise<{ id: string }>;
 };
 
+type Review = {
+  _id: string;
+  reviewerName: string;
+  rating: number;
+  comment: string;
+};
+
 async function getStudio(id: string): Promise<StudioDetails> {
   const response = await fetch(
     `${process.env.API_BASE_URL}/api/studios/${encodeURIComponent(id)}`,
@@ -35,6 +43,72 @@ async function getStudio(id: string): Promise<StudioDetails> {
   }
 
   return response.json();
+}
+
+async function StudioReviews({ studioId }: { studioId: string }) {
+  let reviews: Review[];
+
+  try {
+    const response = await fetch(
+      `${process.env.API_BASE_URL}/api/studios/${encodeURIComponent(studioId)}/reviews`,
+      { cache: "no-store" },
+    );
+
+    if (!response.ok) {
+      throw new Error("Could not load studio reviews.");
+    }
+
+    reviews = await response.json();
+  } catch {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Reviews are unavailable right now. Please try again later.
+      </p>
+    );
+  }
+
+  if (reviews.length === 0) {
+    return <p className="text-sm text-muted-foreground">No reviews yet.</p>;
+  }
+
+  return (
+    <ul className="grid gap-x-10 gap-y-6 md:grid-cols-2">
+      {reviews.map((review) => (
+        <li key={review._id} className="min-w-0 border-t border-border pt-4">
+          <div className="flex items-start justify-between gap-4">
+            <p className="break-words font-medium">{review.reviewerName}</p>
+
+            <span className="inline-flex shrink-0 items-center gap-1.5 text-sm">
+              <Star size={14} className="fill-current" aria-hidden="true" />
+              <span className="sr-only">Rating </span>
+              {review.rating} / 5
+            </span>
+          </div>
+
+          <p className="mt-2 whitespace-pre-line break-words text-sm leading-7 text-muted-foreground">
+            {review.comment}
+          </p>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function ReviewsSkeleton() {
+  return (
+    <div role="status">
+      <span className="sr-only">Loading reviews</span>
+
+      <div
+        aria-hidden="true"
+        className="max-w-md space-y-3 motion-safe:animate-pulse"
+      >
+        <div className="h-4 w-28 rounded-sm bg-muted" />
+        <div className="h-3 w-full rounded-sm bg-muted" />
+        <div className="h-3 w-2/3 rounded-sm bg-muted" />
+      </div>
+    </div>
+  );
 }
 
 export async function generateMetadata({
@@ -139,6 +213,22 @@ export default async function StudioDetailsPage({ params }: StudioPageProps) {
           </p>
         </section>
       </div>
+
+      <section
+        aria-labelledby="reviews-heading"
+        className="mt-10 border-t border-border pt-7 sm:mt-14 sm:pt-9"
+      >
+        <h2
+          id="reviews-heading"
+          className="mb-4 font-heading text-3xl tracking-tight"
+        >
+          Reviews
+        </h2>
+
+        <Suspense key={studio._id} fallback={<ReviewsSkeleton />}>
+          <StudioReviews studioId={studio._id} />
+        </Suspense>
+      </section>
     </main>
   );
 }
