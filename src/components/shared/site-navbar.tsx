@@ -17,6 +17,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { SiteLogo } from "@/components/shared/site-logo";
+import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { authClient } from "@/lib/auth-client";
 
 const navLinks = [
@@ -173,6 +174,7 @@ export function SiteNavbar() {
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
   const user = session?.user;
+  const firstName = user?.name?.trim().split(/\s+/)[0] || "User";
 
   const [openPanel, setOpenPanel] = useState<"mobile" | "account" | null>(null);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -208,6 +210,7 @@ export function SiteNavbar() {
     }
 
     const desktop = window.matchMedia("(min-width: 64rem)");
+
     function handleResize() {
       setOpenPanel(null);
     }
@@ -302,7 +305,9 @@ export function SiteNavbar() {
           ))}
         </nav>
 
-        <div className="hidden items-center gap-2 lg:flex lg:justify-self-end">
+        <div className="hidden min-w-0 items-center gap-2 lg:flex lg:justify-self-end">
+          <ThemeToggle />
+
           {isPending ? (
             <span
               role="status"
@@ -315,8 +320,9 @@ export function SiteNavbar() {
               ref={accountRef}
               className="relative"
               onBlur={(event) => {
-                if (!event.currentTarget.contains(event.relatedTarget))
+                if (!event.currentTarget.contains(event.relatedTarget)) {
                   closeMenu();
+                }
               }}
             >
               <button
@@ -337,7 +343,7 @@ export function SiteNavbar() {
                   <ProfileAvatar user={user} />
                 </span>
 
-                <span>Account</span>
+                <span className="max-w-28 truncate">{firstName}</span>
 
                 <ChevronDown
                   size={14}
@@ -367,36 +373,40 @@ export function SiteNavbar() {
           )}
         </div>
 
-        <button
-          ref={menuButton}
-          type="button"
-          aria-label={
-            mobileOpen ? "Close navigation menu" : "Open navigation menu"
-          }
-          aria-expanded={mobileOpen}
-          aria-controls="mobile-navigation"
-          onClick={() => setOpenPanel(mobileOpen ? null : "mobile")}
-          className={`relative grid size-11 shrink-0 place-items-center rounded-sm text-foreground lg:hidden ${focusStyle}`}
-        >
-          <Menu
-            size={22}
-            aria-hidden="true"
-            className={`${menuIconStyle} ${
-              mobileOpen
-                ? "rotate-90 scale-75 opacity-0"
-                : "rotate-0 scale-100 opacity-100"
-            }`}
-          />
-          <X
-            size={22}
-            aria-hidden="true"
-            className={`${menuIconStyle} ${
-              mobileOpen
-                ? "rotate-0 scale-100 opacity-100"
-                : "-rotate-90 scale-75 opacity-0"
-            }`}
-          />
-        </button>
+        <div className="ml-auto flex shrink-0 items-center gap-1 lg:hidden">
+          <ThemeToggle />
+
+          <button
+            ref={menuButton}
+            type="button"
+            aria-label={
+              mobileOpen ? "Close navigation menu" : "Open navigation menu"
+            }
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-navigation"
+            onClick={() => setOpenPanel(mobileOpen ? null : "mobile")}
+            className={`relative grid size-11 shrink-0 place-items-center rounded-sm text-foreground ${focusStyle}`}
+          >
+            <Menu
+              size={22}
+              aria-hidden="true"
+              className={`${menuIconStyle} ${
+                mobileOpen
+                  ? "rotate-90 scale-75 opacity-0"
+                  : "rotate-0 scale-100 opacity-100"
+              }`}
+            />
+            <X
+              size={22}
+              aria-hidden="true"
+              className={`${menuIconStyle} ${
+                mobileOpen
+                  ? "rotate-0 scale-100 opacity-100"
+                  : "-rotate-90 scale-75 opacity-0"
+              }`}
+            />
+          </button>
+        </div>
       </div>
 
       <div
