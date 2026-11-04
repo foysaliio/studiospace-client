@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { ArrowUpRight, Pencil } from "lucide-react";
+import DeleteStudio from "./delete-studio";
 
 import type { Studio } from "@/features/home/featured-studios";
 import {
@@ -78,6 +79,7 @@ function StudioRow({ studio }: { studio: Studio }) {
           <Pencil size={14} aria-hidden="true" />
           Edit studio
         </Link>
+        <DeleteStudio studioId={studio._id} title={studio.title} />
       </div>
     </li>
   );
