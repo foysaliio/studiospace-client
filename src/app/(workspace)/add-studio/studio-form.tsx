@@ -2,8 +2,9 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Check, Plus } from "lucide-react";
 import { toast } from "sonner";
+
 import { mutationFetch } from "@/lib/mutation-fetch";
 
 export type EditableStudio = {
@@ -35,11 +36,40 @@ const categories = [
   "Workshop",
 ];
 
+const suggestedAmenities = [
+  "Wi-Fi",
+  "Air conditioning",
+  "Studio lights",
+  "Microphones",
+  "Headphones",
+  "Audio mixer",
+];
+
 const inputStyle =
   "mt-2 block min-h-11 w-full min-w-0 rounded-sm border border-input bg-background px-3 py-2 text-base font-normal text-foreground placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
 
 const labelStyle = "block min-w-0 text-sm font-medium";
 const sectionTitle = "font-heading text-2xl tracking-tight sm:text-3xl";
+
+const focusStyle =
+  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
+
+function amenityKey(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function uniqueAmenities(values: string[]) {
+  const seen = new Set<string>();
+
+  return values
+    .map((value) => value.trim())
+    .filter((value) => {
+      const key = amenityKey(value);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
 
 export default function StudioForm({
   ownerName,
@@ -49,8 +79,37 @@ export default function StudioForm({
   const router = useRouter();
   const [photoMode, setPhotoMode] = useState<"url" | "file">("url");
   const [imageUrl, setImageUrl] = useState(studio?.imageUrl ?? "");
+  const [amenities, setAmenities] = useState(() =>
+    uniqueAmenities(studio?.amenities ?? []),
+  );
+  const [customAmenity, setCustomAmenity] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  const amenityOptions = uniqueAmenities([
+    ...suggestedAmenities,
+    ...(studio?.amenities ?? []),
+    ...amenities,
+  ]);
+  const selectedKeys = new Set(amenities.map(amenityKey));
+
+  function toggleAmenity(option: string) {
+    const key = amenityKey(option);
+
+    setAmenities((current) =>
+      current.some((item) => amenityKey(item) === key)
+        ? current.filter((item) => amenityKey(item) !== key)
+        : [...current, option],
+    );
+  }
+
+  function addCustomAmenity() {
+    const value = customAmenity.trim();
+    if (!value) return;
+
+    setAmenities((current) => uniqueAmenities([...current, value]));
+    setCustomAmenity("");
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -91,8 +150,6 @@ export default function StudioForm({
         }
 
         coverUrl = result.imageUrl;
-
-        // If saving fails, the uploaded photo can be reused on the next try.
         setImageUrl(coverUrl);
         setPhotoMode("url");
       }
@@ -106,10 +163,7 @@ export default function StudioForm({
         hourlyRate: Number(text("hourlyRate")),
         securityDeposit: Number(text("securityDeposit")),
         maxCapacity: Number(text("maxCapacity")),
-        amenities: text("amenities")
-          .split(",")
-          .map((item) => item.trim())
-          .filter(Boolean),
+        amenities: uniqueAmenities([...amenities, customAmenity]),
       };
 
       const endpoint = studio
@@ -208,18 +262,65 @@ export default function StudioForm({
             />
           </label>
 
-          <label className={labelStyle}>
-            Amenities
-            <input
-              name="amenities"
-              defaultValue={studio?.amenities?.join(", ")}
-              placeholder="Microphones, headphones, audio mixer"
-              className={inputStyle}
-            />
-            <span className="mt-1.5 block text-xs font-normal text-muted-foreground">
-              Separate each amenity with a comma.
-            </span>
-          </label>
+          <fieldset className="min-w-0">
+            <legend className={labelStyle}>Amenities</legend>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">
+              Choose what guests can use during their session.
+            </p>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              {amenityOptions.map((option) => {
+                const selected = selectedKeys.has(amenityKey(option));
+                const Icon = selected ? Check : Plus;
+
+                return (
+                  <button
+                    key={amenityKey(option)}
+                    type="button"
+                    aria-pressed={selected}
+                    onClick={() => toggleAmenity(option)}
+                    className={`inline-flex min-h-11 max-w-full cursor-pointer items-center gap-2 rounded-sm border px-3 text-left text-sm transition-colors duration-200 motion-reduce:transition-none ${focusStyle} ${
+                      selected
+                        ? "border-primary bg-primary text-primary-foreground hover:bg-primary/90"
+                        : "border-border bg-background text-foreground hover:border-foreground/50 hover:bg-accent"
+                    }`}
+                  >
+                    <Icon size={15} aria-hidden="true" className="shrink-0" />
+                    <span className="min-w-0 break-words">{option}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <label htmlFor="custom-amenity" className={`${labelStyle} mt-4`}>
+              Other amenity
+            </label>
+            <div className="mt-2 flex items-stretch gap-2">
+              <input
+                id="custom-amenity"
+                type="text"
+                value={customAmenity}
+                onChange={(event) => setCustomAmenity(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+                    event.preventDefault();
+                    addCustomAmenity();
+                  }
+                }}
+                placeholder="e.g. Blackout curtains"
+                className={`min-h-11 min-w-0 flex-1 rounded-sm border border-input bg-background px-3 text-base text-foreground placeholder:text-muted-foreground ${focusStyle}`}
+              />
+              <button
+                type="button"
+                disabled={!customAmenity.trim()}
+                onClick={addCustomAmenity}
+                className={`inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-sm border border-input px-3 text-sm font-medium transition-colors enabled:hover:bg-accent disabled:cursor-default disabled:opacity-50 ${focusStyle}`}
+              >
+                <Plus size={15} aria-hidden="true" />
+                Add
+              </button>
+            </div>
+          </fieldset>
         </section>
 
         <section
@@ -237,7 +338,7 @@ export default function StudioForm({
                 type="button"
                 aria-pressed={photoMode === mode}
                 onClick={() => setPhotoMode(mode)}
-                className={`min-h-11 cursor-pointer rounded-sm px-4 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring ${
+                className={`min-h-11 cursor-pointer rounded-sm px-4 text-sm font-medium transition-colors ${focusStyle} ${
                   photoMode === mode
                     ? "bg-primary text-primary-foreground"
                     : "bg-secondary text-secondary-foreground hover:bg-accent"
@@ -249,7 +350,7 @@ export default function StudioForm({
           </div>
 
           {photoMode === "url" ? (
-            <label className={labelStyle}>
+            <label key="photo-url" className={labelStyle}>
               Image URL
               <input
                 name="imageUrl"
@@ -263,7 +364,7 @@ export default function StudioForm({
               />
             </label>
           ) : (
-            <label className={labelStyle}>
+            <label key="photo-file" className={labelStyle}>
               Choose a photo
               <input
                 name="photo"
@@ -342,6 +443,7 @@ export default function StudioForm({
               Name
               <input value={ownerName} readOnly className={inputStyle} />
             </label>
+
             <label className={labelStyle}>
               Email
               <input value={ownerEmail} readOnly className={inputStyle} />
@@ -359,7 +461,7 @@ export default function StudioForm({
       <button
         type="submit"
         disabled={saving}
-        className="group mt-6 inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-4 rounded-sm bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/85 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring disabled:cursor-wait disabled:opacity-60 sm:w-fit"
+        className={`group mt-6 inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-4 rounded-sm bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/85 disabled:cursor-wait disabled:opacity-60 sm:w-fit ${focusStyle}`}
       >
         {saving ? "Saving…" : studio ? "Save changes" : "Publish studio"}
         <ArrowUpRight
