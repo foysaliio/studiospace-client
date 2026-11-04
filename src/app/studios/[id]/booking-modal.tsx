@@ -13,6 +13,7 @@ import {
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { mutationFetch } from "@/lib/mutation-fetch";
+import { Select } from "@base-ui/react/select";
 
 type BookingModalProps = {
   title: string;
@@ -60,26 +61,60 @@ function TimeSelect({
   options: string[];
   onChange: (value: string) => void;
 }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
   return (
-    <label className="relative block min-w-0">
-      <span className="sr-only">{label}</span>
-      <select
+    <div ref={containerRef} className="min-w-0">
+      <Select.Root
         value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className={`h-11 w-full cursor-pointer appearance-none rounded-sm bg-muted pl-3 pr-7 text-base font-medium tabular-nums text-foreground ${focusStyle}`}
+        onValueChange={(nextValue) => {
+          if (typeof nextValue === "string") onChange(nextValue);
+        }}
       >
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
-      <ChevronDown
-        size={13}
-        aria-hidden="true"
-        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
-      />
-    </label>
+        <Select.Trigger
+          aria-label={`${label}: ${value}`}
+          className={`group inline-flex h-11 w-full min-w-0 cursor-pointer items-center justify-between gap-1 rounded-sm border border-transparent bg-muted px-2.5 text-sm font-medium tabular-nums text-foreground transition-colors duration-200 hover:border-foreground/25 data-[popup-open]:border-foreground/40 ${focusStyle}`}
+        >
+          <Select.Value />
+
+          <ChevronDown
+            size={13}
+            aria-hidden="true"
+            className="shrink-0 text-muted-foreground transition-transform duration-200 group-data-[popup-open]:rotate-180 motion-reduce:transition-none"
+          />
+        </Select.Trigger>
+
+        <Select.Portal container={containerRef}>
+          <Select.Positioner
+            side="bottom"
+            align="start"
+            sideOffset={5}
+            alignItemWithTrigger={false}
+            className="z-20"
+          >
+            <Select.Popup className="w-[var(--anchor-width)] min-w-16 overflow-hidden rounded-sm border border-border bg-popover text-popover-foreground shadow-md">
+              <Select.List className="max-h-[min(11rem,var(--available-height))] overflow-y-auto overscroll-contain p-1">
+                {options.map((option) => (
+                  <Select.Item
+                    key={option}
+                    value={option}
+                    className="flex min-h-10 cursor-pointer items-center justify-between gap-1 rounded-sm px-2 text-sm tabular-nums outline-none data-[selected]:font-semibold data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground"
+                  >
+                    <Select.ItemText>{option}</Select.ItemText>
+
+                    <Select.ItemIndicator>
+                      <span aria-hidden="true" className="text-xs">
+                        ✓
+                      </span>
+                    </Select.ItemIndicator>
+                  </Select.Item>
+                ))}
+              </Select.List>
+            </Select.Popup>
+          </Select.Positioner>
+        </Select.Portal>
+      </Select.Root>
+    </div>
   );
 }
 
