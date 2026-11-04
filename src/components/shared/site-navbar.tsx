@@ -70,22 +70,23 @@ function AuthLinks() {
 
 function ProfileAvatar({ user }: { user: NavbarUser }) {
   const [failedImage, setFailedImage] = useState("");
-  const image = user.image ?? "";
-  const isGooglePhoto =
-    /^https:\/\/lh\d+\.googleusercontent\.com\/(?:a|a-)\//i.test(image);
+  const image = user.image?.trim() ?? "";
   const initial = Array.from(user.name.trim())[0]?.toUpperCase() || "U";
+  const showImage = /^https?:\/\//i.test(image) && image !== failedImage;
 
   return (
     <span
       aria-hidden="true"
       className="relative grid size-7 shrink-0 place-items-center overflow-hidden rounded-full bg-foreground font-heading text-sm leading-none text-background"
     >
-      {isGooglePhoto && failedImage !== image ? (
+      {showImage ? (
         <Image
+          key={image}
           src={image}
           alt=""
           fill
-          sizes="28px"
+          unoptimized
+          referrerPolicy="no-referrer"
           className="object-cover"
           onError={() => setFailedImage(image)}
         />
