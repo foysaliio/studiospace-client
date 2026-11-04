@@ -4,6 +4,7 @@ import { useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowUpRight } from "lucide-react";
 import { toast } from "sonner";
+import { mutationFetch } from "@/lib/mutation-fetch";
 
 type CancelBookingProps = {
   bookingId: string;
@@ -39,7 +40,7 @@ export default function CancelBooking({
     setError("");
 
     try {
-      const response = await fetch(
+      const response = await mutationFetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/bookings/${encodeURIComponent(bookingId)}/cancel`,
         {
           method: "PATCH",

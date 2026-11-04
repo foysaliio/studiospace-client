@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { mutationFetch } from "@/lib/mutation-fetch";
 
 type BookingModalProps = {
   title: string;
@@ -136,7 +137,7 @@ export default function BookingModal({
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(
+      const response = await mutationFetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/bookings`,
         {
           method: "POST",

@@ -4,6 +4,7 @@ import { useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { mutationFetch } from "@/lib/mutation-fetch";
 
 import { focusStyle } from "@/components/shared/workspace-ui";
 
@@ -35,7 +36,7 @@ export default function DeleteStudio({ studioId, title }: DeleteStudioProps) {
     setError("");
 
     try {
-      const response = await fetch(
+      const response = await mutationFetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/studios/${encodeURIComponent(studioId)}`,
         {
           method: "DELETE",
