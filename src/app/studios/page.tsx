@@ -101,13 +101,23 @@ async function StudioResults({ category }: { category: string }) {
 
   if (studios.length === 0) {
     return (
-      <div className="py-8">
-        <h2 className="font-heading text-2xl">No studios found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
+      <div className="rounded-sm bg-secondary px-5 py-8 sm:px-8 sm:py-10">
+        <h2 className="font-heading text-3xl tracking-tight">
+          {category ? "No studios in this category" : "No studios listed yet"}
+        </h2>
+
+        <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
           {category
-            ? "Choose another category to explore more spaces."
-            : "New studio listings will appear here."}
+            ? "Browse all studios to find another space for your session."
+            : "Have a creative space to share? Publish the first studio."}
         </p>
+
+        <Link
+          href={category ? "/studios" : "/add-studio"}
+          className="mt-5 inline-flex min-h-11 items-center justify-center rounded-sm bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/85 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+        >
+          {category ? "View all studios" : "List a studio"}
+        </Link>
       </div>
     );
   }
