@@ -2,7 +2,7 @@ const bookingSteps = [
   {
     title: "Discover Spaces",
     description:
-      "Compare studio photos, equipment, and hourly rates to find a space that fits your project.",
+      "Compare studio photos, equipment, and hourly rates to find that fits your project.",
   },
   {
     title: "Select Shoot Hours",
