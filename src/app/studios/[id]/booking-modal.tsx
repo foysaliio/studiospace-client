@@ -10,9 +10,12 @@ import {
   Plus,
   X,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 type BookingModalProps = {
   title: string;
+  studioId: string;
   hourlyRate: number;
   securityDeposit: number;
 };
@@ -80,10 +83,13 @@ function TimeSelect({
 }
 
 export default function BookingModal({
+  studioId,
   title,
   hourlyRate,
   securityDeposit,
 }: BookingModalProps) {
+  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [today, setToday] = useState<Date | null>(null);
   const [firstDay, setFirstDay] = useState(0);
@@ -113,6 +119,52 @@ export default function BookingModal({
     setFirstDay(Math.floor(offset / 5) * 5);
 
     dialogRef.current?.showModal();
+  }
+
+  async function submitBooking() {
+    if (!selectedDay || isSubmitting) return;
+
+    const start = new Date(selectedDay);
+    const hour24 = (Number(hour) % 12) + (period === "PM" ? 12 : 0);
+    start.setHours(hour24, Number(minute), 0, 0);
+
+    if (start.getTime() <= Date.now()) {
+      toast.error("Choose a future start time.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/bookings`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            studioId,
+            startAt: start.toISOString(),
+            hours: duration,
+          }),
+        },
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        toast.error(result.message || "Could not create your booking.");
+        return;
+      }
+
+      dialogRef.current?.close();
+      toast.success("Booking requested.");
+      router.push("/my-bookings");
+    } catch {
+      toast.error("Could not reach the server. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -299,6 +351,20 @@ export default function BookingModal({
               {money.format(securityDeposit)}
             </span>
           </div>
+
+          <button
+            type="button"
+            onClick={submitBooking}
+            disabled={isSubmitting}
+            className={`group mt-5 inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-3 rounded-sm bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/85 disabled:cursor-wait disabled:opacity-60 ${focusStyle}`}
+          >
+            {isSubmitting ? "Sending request…" : "Request booking"}
+            <ArrowUpRight
+              size={16}
+              aria-hidden="true"
+              className="motion-safe:transition-transform motion-safe:duration-200 motion-safe:group-hover:-translate-y-0.5 motion-safe:group-hover:translate-x-0.5"
+            />
+          </button>
         </footer>
       </dialog>
     </>

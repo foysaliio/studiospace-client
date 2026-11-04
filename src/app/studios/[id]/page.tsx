@@ -193,6 +193,7 @@ export default async function StudioDetailsPage({ params }: StudioPageProps) {
           <BookingModal
             key={studio._id}
             title={studio.title}
+            studioId={studio._id}
             hourlyRate={studio.hourlyRate}
             securityDeposit={studio.securityDeposit}
           />
