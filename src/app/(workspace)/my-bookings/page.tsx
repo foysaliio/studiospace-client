@@ -1,142 +1,79 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import {
-  ArrowUpRight,
-  Ban,
-  CalendarDays,
-  Check,
-  CheckCheck,
-  Clock3,
-} from "lucide-react";
+import { Ban, Check, CheckCheck, Clock3 } from "lucide-react";
 
 import CancelBooking from "./cancel-booking";
+import {
+  WorkspaceEmpty,
+  WorkspaceHeader,
+  WorkspaceSkeleton,
+  money,
+  sessionLabel,
+  type WorkspaceBooking,
+} from "@/components/shared/workspace-ui";
 
 export const metadata: Metadata = {
   title: "My bookings",
-  description: "View your studio reservations and booking status.",
+  description: "View your studio reservations, session times and fees.",
 };
 
-type BookingStatus = "Pending" | "Confirmed" | "Completed" | "Cancelled";
-
-type Booking = {
-  _id: string;
-  studioTitle: string;
-  status: BookingStatus;
-  startAt?: string;
-  hours?: number;
-  studioFee?: number;
+const statusStyle = {
+  Pending: { icon: Clock3, color: "text-amber-800 dark:text-amber-300" },
+  Confirmed: { icon: Check, color: "text-emerald-800 dark:text-emerald-300" },
+  Completed: { icon: CheckCheck, color: "text-foreground" },
+  Cancelled: { icon: Ban, color: "text-muted-foreground" },
 };
 
-const statusStyles = {
-  Pending: {
-    icon: Clock3,
-    color: "text-amber-800 dark:text-amber-300",
-  },
-  Confirmed: {
-    icon: Check,
-    color: "text-emerald-800 dark:text-emerald-300",
-  },
-  Completed: {
-    icon: CheckCheck,
-    color: "text-foreground",
-  },
-  Cancelled: {
-    icon: Ban,
-    color: "text-muted-foreground",
-  },
-};
-
-const studioTimeZone = "Asia/Dhaka";
-
-const dateFormat = new Intl.DateTimeFormat("en-US", {
-  weekday: "short",
-  month: "short",
-  day: "numeric",
-  year: "numeric",
-  timeZone: studioTimeZone,
-});
-
-const timeFormat = new Intl.DateTimeFormat("en-US", {
-  hour: "numeric",
-  minute: "2-digit",
-  timeZone: studioTimeZone,
-});
-
-const feeFormat = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 2,
-});
-
-const sessionGrid =
-  "mt-3 grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_9rem_7rem] lg:items-baseline lg:gap-6";
-
-function BookingTicket({ booking }: { booking: Booking }) {
-  const start = booking.startAt ? new Date(booking.startAt) : null;
-  const date = start && Number.isFinite(start.getTime()) ? start : null;
-  const { icon: StatusIcon, color } = statusStyles[booking.status];
+function BookingRow({ booking }: { booking: WorkspaceBooking }) {
+  const { icon: StatusIcon, color } = statusStyle[booking.status];
 
   return (
-    <article className="min-w-0 border-b border-border py-5 sm:py-6">
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <div className="text-xs font-medium tracking-wide text-muted-foreground">
-          {date ? (
-            <time dateTime={date.toISOString()}>{dateFormat.format(date)}</time>
-          ) : (
-            "Date unavailable"
+    <li className="min-w-0 py-5 sm:py-6">
+      <div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-x-6 sm:gap-y-2">
+        <div className="min-w-0 sm:col-start-1 sm:row-start-1">
+          <p
+            className={`inline-flex items-center gap-1.5 text-xs font-medium ${color}`}
+          >
+            <StatusIcon size={14} aria-hidden="true" />
+            {booking.status}
+          </p>
+
+          <h2 className="mt-1.5 break-words font-heading text-3xl leading-tight tracking-tight">
+            {booking.studioTitle}
+          </h2>
+
+          <p className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm leading-5 text-muted-foreground">
+            <span>{sessionLabel(booking.startAt)}</span>
+
+            {typeof booking.hours === "number" && (
+              <span>
+                · {booking.hours} {booking.hours === 1 ? "hour" : "hours"}
+              </span>
+            )}
+          </p>
+        </div>
+
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 sm:col-start-2 sm:row-start-1 sm:flex-col sm:items-end sm:justify-start">
+          <p className="inline-flex items-baseline gap-2 sm:flex-col sm:items-end sm:gap-1">
+            <span className="text-xs text-muted-foreground">Studio fee</span>
+            <strong className="text-lg font-semibold tabular-nums">
+              {typeof booking.studioFee === "number"
+                ? money.format(booking.studioFee)
+                : "—"}
+            </strong>
+          </p>
+
+          {booking.status === "Pending" && (
+            <CancelBooking
+              bookingId={booking._id}
+              studioTitle={booking.studioTitle}
+            />
           )}
         </div>
-
-        <span
-          className={`inline-flex items-center gap-1.5 text-xs font-medium ${color}`}
-        >
-          <StatusIcon size={14} aria-hidden="true" />
-          {booking.status}
-        </span>
       </div>
-
-      <div className={sessionGrid}>
-        <h2 className="min-w-0 break-words font-heading text-3xl leading-tight tracking-tight sm:text-4xl">
-          {booking.studioTitle}
-        </h2>
-
-        <dl className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 lg:contents">
-          <div>
-            <dt className="text-xs text-muted-foreground">Session time</dt>
-            <dd className="mt-1 flex flex-wrap items-baseline gap-x-1.5 text-sm font-medium tabular-nums">
-              <span>{date ? timeFormat.format(date) : "—"}</span>
-              {typeof booking.hours === "number" && (
-                <span className="font-normal text-muted-foreground">
-                  · {booking.hours} {booking.hours === 1 ? "hr" : "hrs"}
-                </span>
-              )}
-            </dd>
-          </div>
-
-          <div className="text-right">
-            <dt className="text-xs text-muted-foreground">Studio fee</dt>
-            <dd className="mt-1 text-sm font-semibold tabular-nums">
-              {typeof booking.studioFee === "number"
-                ? feeFormat.format(booking.studioFee)
-                : "—"}
-            </dd>
-          </div>
-        </dl>
-      </div>
-
-      {booking.status === "Pending" && (
-        <div className="mt-2 flex justify-end">
-          <CancelBooking
-            bookingId={booking._id}
-            studioTitle={booking.studioTitle}
-          />
-        </div>
-      )}
-    </article>
+    </li>
   );
 }
 
@@ -151,125 +88,51 @@ async function BookingList() {
     },
   );
 
-  if (response.status === 401) {
-    redirect("/login?next=/my-bookings");
-  }
+  if (response.status === 401) redirect("/login?next=/my-bookings");
+  if (!response.ok) throw new Error("Could not load your bookings.");
 
-  if (!response.ok) {
-    throw new Error("Could not load your bookings.");
-  }
-
-  const bookings: Booking[] = await response.json();
+  const bookings: WorkspaceBooking[] = await response.json();
 
   if (bookings.length === 0) {
     return (
-      <section
-        aria-labelledby="empty-bookings-heading"
-        className="rounded-sm bg-secondary px-5 py-8 sm:px-8 sm:py-10"
-      >
-        <CalendarDays
-          size={26}
-          strokeWidth={1.5}
-          aria-hidden="true"
-          className="mb-5 text-muted-foreground"
-        />
-
-        <h2
-          id="empty-bookings-heading"
-          className="font-heading text-3xl leading-tight tracking-tight"
-        >
-          No bookings yet
-        </h2>
-
-        <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
-          Once you reserve a studio, you can check its booking status here.
-        </p>
-
-        <Link
-          href="/studios"
-          className="group mt-5 inline-flex min-h-12 items-center justify-center gap-4 rounded-sm bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors duration-200 hover:bg-primary/85 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
-        >
-          Explore studios
-          <ArrowUpRight
-            size={16}
-            aria-hidden="true"
-            className="motion-safe:transition-transform motion-safe:duration-200 motion-safe:group-hover:-translate-y-0.5 motion-safe:group-hover:translate-x-0.5"
-          />
-        </Link>
-      </section>
+      <WorkspaceEmpty
+        title="Your first session"
+        description="Choose a studio for your next project. Your reservation will appear here."
+        href="/studios"
+        action="Explore studios"
+      />
     );
   }
 
   return (
-    <ul
-      aria-label="Your reservations"
-      className="min-w-0 border-t border-border"
-    >
-      {bookings.map((booking) => (
-        <li key={booking._id} className="min-w-0">
-          <BookingTicket booking={booking} />
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function BookingsSkeleton() {
-  return (
-    <div role="status">
-      <span className="sr-only">Loading your bookings</span>
-
-      <div
-        aria-hidden="true"
-        className="border-t border-border motion-safe:animate-pulse"
-      >
-        {[1, 2, 3].map((item) => (
-          <div key={item} className="border-b border-border py-5 sm:py-6">
-            <div className="flex items-center justify-between gap-4">
-              <div className="h-3 w-28 rounded-sm bg-muted" />
-              <div className="h-3 w-16 rounded-sm bg-muted" />
-            </div>
-
-            <div className={sessionGrid}>
-              <div className="h-9 w-4/5 max-w-xs rounded-sm bg-muted" />
-
-              <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 lg:contents">
-                <div className="space-y-2">
-                  <div className="h-3 w-16 rounded-sm bg-muted" />
-                  <div className="h-4 w-24 rounded-sm bg-muted" />
-                </div>
-
-                <div className="space-y-2 justify-self-end">
-                  <div className="h-3 w-14 rounded-sm bg-muted" />
-                  <div className="ml-auto h-4 w-10 rounded-sm bg-muted" />
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
+    <section aria-label="Your reservations">
+      <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-foreground/30 pb-3">
+        <p className="text-sm font-medium">
+          {bookings.length}{" "}
+          {bookings.length === 1 ? "reservation" : "reservations"}
+        </p>
+        <p className="text-xs text-muted-foreground">Newest bookings first</p>
       </div>
-    </div>
+
+      <ul className="divide-y divide-border border-b border-border">
+        {bookings.map((booking) => (
+          <BookingRow key={booking._id} booking={booking} />
+        ))}
+      </ul>
+    </section>
   );
 }
 
 export default function MyBookingsPage() {
   return (
     <>
-      <header className="mb-6 sm:mb-8">
-        <p className="mb-2 text-xs font-medium uppercase tracking-widest text-muted-foreground">
-          Reservations
-        </p>
+      <WorkspaceHeader
+        label="Reservations"
+        title="My bookings"
+        description="Your studio sessions and fees. Times are shown in Dhaka time."
+      />
 
-        <h1 className="font-heading text-4xl leading-tight tracking-tight sm:text-5xl">
-          My bookings
-        </h1>
-
-        <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          Session times are shown in Dhaka time.
-        </p>
-      </header>
-
-      <Suspense fallback={<BookingsSkeleton />}>
+      <Suspense fallback={<WorkspaceSkeleton label="Loading your bookings" />}>
         <BookingList />
       </Suspense>
     </>
