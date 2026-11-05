@@ -5,8 +5,8 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { ArrowUpRight, Pencil } from "lucide-react";
-import DeleteStudio from "./delete-studio";
 
+import DeleteStudio from "./delete-studio";
 import type { Studio } from "@/features/home/featured-studios";
 import {
   WorkspaceEmpty,
@@ -22,15 +22,52 @@ export const metadata: Metadata = {
   description: "View and edit the studios you host.",
 };
 
+// Only the Edit link and the outer Delete button are direct children.
+// The buttons inside the confirmation dialog use their own styles.
+const rowActions = `
+  flex flex-wrap items-center justify-between gap-2 px-2
+  sm:flex-col sm:items-end
+
+  [&>:is(a,button)]:inline-flex
+  [&>:is(a,button)]:min-h-11
+  [&>:is(a,button)]:cursor-pointer
+  [&>:is(a,button)]:items-center
+  [&>:is(a,button)]:justify-center
+  [&>:is(a,button)]:gap-2
+  [&>:is(a,button)]:rounded-sm
+  [&>:is(a,button)]:border
+  [&>:is(a,button)]:border-border
+  [&>:is(a,button)]:bg-background
+  [&>:is(a,button)]:px-3
+  [&>:is(a,button)]:text-sm
+  [&>:is(a,button)]:font-medium
+  [&>:is(a,button)]:text-foreground
+  [&>:is(a,button)]:transition-colors
+  [&>:is(a,button)]:duration-200
+  sm:[&>:is(a,button)]:w-40
+
+  [&>:is(a,button):hover]:border-foreground
+  [&>:is(a,button):hover]:bg-foreground
+  [&>:is(a,button):hover]:text-background
+
+  [&>:is(a,button)>svg]:order-last
+  [&>:is(a,button)>svg]:size-4
+  [&>:is(a,button)>svg]:shrink-0
+  motion-safe:[&>:is(a,button)>svg]:transition-transform
+  motion-safe:[&>:is(a,button)>svg]:duration-200
+  motion-safe:[&>:is(a,button):hover>svg]:translate-x-0.5
+  motion-reduce:[&>:is(a,button)]:transition-none
+`;
+
 function StudioRow({ studio }: { studio: Studio }) {
   const id = encodeURIComponent(studio._id);
 
   return (
-    <li className="grid min-w-0 gap-3 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-5 sm:py-5">
+    <li className="grid min-w-0 gap-3 py-4 transition-colors duration-200 motion-reduce:transition-none sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-5 sm:py-5 sm:hover:bg-secondary/60 sm:focus-within:bg-secondary/60">
       <Link
         href={`/studios/${id}`}
         aria-label={`View ${studio.title}`}
-        className={`group grid min-w-0 grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-3 rounded-sm border border-transparent p-2 transition-colors duration-200 hover:border-foreground/30 hover:bg-secondary sm:grid-cols-[7rem_minmax(0,1fr)] sm:gap-5 ${focusStyle}`}
+        className={`group grid min-w-0 grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-3 rounded-sm border border-transparent p-2 sm:grid-cols-[7rem_minmax(0,1fr)] sm:gap-5 ${focusStyle}`}
       >
         <div className="relative aspect-square overflow-hidden rounded-sm bg-muted sm:aspect-[4/3]">
           <Image
@@ -46,12 +83,15 @@ function StudioRow({ studio }: { studio: Studio }) {
           <p className="text-xs font-medium text-muted-foreground">
             {studio.category}
           </p>
+
           <h2 className="mt-1 break-words font-heading text-2xl leading-tight tracking-tight sm:text-3xl">
             {studio.title}
           </h2>
+
           <p className="mt-1 break-words text-sm text-muted-foreground">
             {studio.location}
           </p>
+
           <span className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium">
             View studio
             <ArrowUpRight
@@ -63,7 +103,7 @@ function StudioRow({ studio }: { studio: Studio }) {
         </div>
       </Link>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 px-2 sm:flex-col sm:items-end">
+      <div className={rowActions}>
         <p className="flex items-baseline gap-1.5">
           <strong className="text-lg font-semibold tabular-nums">
             {money.format(studio.hourlyRate)}
@@ -74,11 +114,12 @@ function StudioRow({ studio }: { studio: Studio }) {
         <Link
           href={`/studios/edit/${id}`}
           aria-label={`Edit ${studio.title}`}
-          className={`inline-flex min-h-11 items-center gap-2 rounded-sm border border-border px-3 text-sm font-medium transition-colors duration-200 hover:border-foreground/35 hover:bg-secondary ${focusStyle}`}
+          className={focusStyle}
         >
-          <Pencil size={14} aria-hidden="true" />
           Edit studio
+          <Pencil size={16} aria-hidden="true" />
         </Link>
+
         <DeleteStudio studioId={studio._id} title={studio.title} />
       </div>
     </li>
