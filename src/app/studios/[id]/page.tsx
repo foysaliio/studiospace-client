@@ -165,9 +165,9 @@ export default async function StudioDetailsPage({ params }: StudioPageProps) {
 
       <section
         aria-label="Booking information"
-        className="mt-4 grid items-center gap-5 rounded-sm bg-secondary px-4 py-5 text-secondary-foreground sm:px-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-x-12 lg:px-8"
+        className="mt-4 grid items-center gap-4 rounded-sm bg-secondary p-4 text-secondary-foreground sm:gap-5 sm:px-6 sm:py-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-x-12 lg:px-8"
       >
-        <dl className="grid min-w-0 grid-cols-3 gap-x-3 gap-y-1 sm:gap-x-6">
+        <dl className="grid min-w-0 sm:grid-cols-3 sm:gap-x-6 sm:gap-y-1">
           {[
             { label: "Hourly rate", value: `$${studio.hourlyRate}` },
             {
@@ -178,12 +178,12 @@ export default async function StudioDetailsPage({ params }: StudioPageProps) {
           ].map(({ label, value }) => (
             <div
               key={label}
-              className="row-span-2 grid min-w-0 grid-rows-subgrid"
+              className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-4 border-b border-border py-2.5 first:pt-0 last:border-b-0 last:pb-0 sm:row-span-2 sm:grid-cols-1 sm:grid-rows-subgrid sm:items-stretch sm:border-0 sm:py-0"
             >
-              <dt className="self-end text-xs leading-4 text-muted-foreground">
+              <dt className="text-sm leading-5 text-muted-foreground sm:self-end sm:text-xs sm:leading-4">
                 {label}
               </dt>
-              <dd className="font-heading text-xl leading-7 tracking-tight tabular-nums sm:text-2xl sm:leading-8">
+              <dd className="min-w-0 break-words text-right font-heading text-xl leading-7 tracking-tight tabular-nums sm:text-left sm:text-2xl sm:leading-8">
                 {value}
               </dd>
             </div>
