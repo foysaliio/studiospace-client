@@ -34,8 +34,9 @@ const hostLinks = [
   },
 ];
 
-export default async function DashboardPage() {
+async function getNextSession(): Promise<WorkspaceBooking | undefined> {
   const cookieStore = await cookies();
+
   const response = await fetch(
     `${process.env.API_BASE_URL}/api/bookings/mine`,
     {
@@ -44,14 +45,24 @@ export default async function DashboardPage() {
     },
   );
 
-  if (response.status === 401) redirect("/login?next=/dashboard");
-  if (!response.ok) throw new Error("Could not load your dashboard.");
+  if (response.status === 401) {
+    redirect("/login?next=/dashboard");
+  }
+
+  if (!response.ok) {
+    throw new Error("Could not load your dashboard.");
+  }
 
   const bookings: WorkspaceBooking[] = await response.json();
   const now = Date.now();
-  const next = bookings
-    .filter((item) => isActiveSession(item, now))
+
+  return bookings
+    .filter((booking) => isActiveSession(booking, now))
     .sort(byStart)[0];
+}
+
+export default async function DashboardPage() {
+  const next = await getNextSession();
 
   return (
     <>
@@ -65,7 +76,6 @@ export default async function DashboardPage() {
         aria-labelledby="next-session-heading"
         className="relative isolate overflow-hidden rounded-sm bg-foreground px-5 py-6 text-background sm:px-8 sm:py-8"
       >
-        {/* A quiet aperture detail, drawn with the site's own colors. */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute -right-12 -top-16 -z-10 size-52 rounded-full border border-background/10 sm:size-72"
@@ -141,9 +151,11 @@ export default async function DashboardPage() {
                   className="text-muted-foreground motion-safe:transition-transform motion-safe:group-hover:-translate-y-0.5 motion-safe:group-hover:translate-x-0.5"
                 />
               </div>
+
               <h3 className="mt-4 font-heading text-2xl tracking-tight">
                 {title}
               </h3>
+
               <p className="mt-1 text-sm leading-6 text-muted-foreground">
                 {text}
               </p>
