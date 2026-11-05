@@ -7,6 +7,7 @@ import { ArrowLeft, ArrowUpRight, Check, Star } from "lucide-react";
 import type { Studio } from "@/features/home/featured-studios";
 import BookingModal from "./booking-modal";
 import StudioGallery from "./studio-gallery";
+import ReviewForm from "./review-form";
 
 type StudioDetails = Studio & {
   overview: string;
@@ -273,6 +274,7 @@ export default async function StudioDetailsPage({ params }: StudioPageProps) {
           <Suspense key={studio._id} fallback={<ReviewsSkeleton />}>
             <StudioReviews studioId={studio._id} />
           </Suspense>
+          <ReviewForm studioId={studio._id} />
         </div>
       </section>
     </main>

@@ -40,6 +40,14 @@ const headingRow = "mb-3 flex min-h-9 items-center";
 
 const navHeadingStyle = `${headingRow} text-xs font-medium uppercase tracking-widest text-muted-foreground`;
 
+function shareOnX() {
+  const shareUrl = new URL("https://twitter.com/intent/tweet");
+  shareUrl.searchParams.set("text", "Find a creative studio on StudioSpace.");
+  shareUrl.searchParams.set("url", window.location.origin);
+
+  window.open(shareUrl.toString(), "_blank", "noopener,noreferrer");
+}
+
 function scrollToPageTop() {
   const reduceMotion = window.matchMedia(
     "(prefers-reduced-motion: reduce)",
@@ -126,18 +134,42 @@ export function SiteFooter() {
               and make things together.
             </p>
 
-            <a
-              href={`mailto:${contactEmail}`}
-              className={`${textLinkStyle} mt-2 max-w-full gap-2`}
-            >
-              <Mail
-                size={15}
-                strokeWidth={1.6}
-                aria-hidden="true"
-                className="shrink-0"
-              />
-              <span className="min-w-0 break-all">{contactEmail}</span>
-            </a>
+            <div className="mt-2 flex min-w-0 flex-col items-start">
+              <a
+                href={`mailto:${contactEmail}`}
+                className={`${textLinkStyle} max-w-full gap-2`}
+              >
+                <Mail
+                  size={15}
+                  strokeWidth={1.6}
+                  aria-hidden="true"
+                  className="shrink-0"
+                />
+                <span className="min-w-0 break-all">{contactEmail}</span>
+              </a>
+
+              <button
+                type="button"
+                onClick={shareOnX}
+                aria-label="Share StudioSpace on X (opens in a new tab)"
+                className={`${textLinkStyle} group min-h-11 cursor-pointer gap-2`}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                  className="size-[15px] shrink-0"
+                >
+                  <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.64 7.584H.47l8.6-9.835L0 1.154h7.594l5.243 6.932 6.064-6.933Zm-1.29 19.49h2.039L6.487 3.24H4.3l13.311 17.403Z" />
+                </svg>
+                Share on X
+                <ArrowUpRight
+                  size={13}
+                  aria-hidden="true"
+                  className="motion-safe:transition-transform motion-safe:duration-200 motion-safe:group-hover:-translate-y-0.5 motion-safe:group-hover:translate-x-0.5"
+                />
+              </button>
+            </div>
           </div>
 
           <div className="col-span-2 min-w-0 sm:col-span-1 lg:col-start-4 lg:row-start-1">
@@ -185,6 +217,7 @@ export function SiteFooter() {
             <p className="text-xs text-muted-foreground">
               Designed &amp; built by
             </p>
+
             <a
               href={portfolioUrl}
               target="_blank"
