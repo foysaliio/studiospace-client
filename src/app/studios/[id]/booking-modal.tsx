@@ -12,8 +12,10 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { mutationFetch } from "@/lib/mutation-fetch";
 import { Select } from "@base-ui/react/select";
+
+import { authClient } from "@/lib/auth-client";
+import { mutationFetch } from "@/lib/mutation-fetch";
 
 type BookingModalProps = {
   title: string;
@@ -36,6 +38,7 @@ const monthFormat = new Intl.DateTimeFormat("en-US", {
 
 const dayFormat = new Intl.DateTimeFormat("en-US", { weekday: "short" });
 const fullDateFormat = new Intl.DateTimeFormat("en-US", { dateStyle: "full" });
+
 const money = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
@@ -125,8 +128,10 @@ export default function BookingModal({
   securityDeposit,
 }: BookingModalProps) {
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { data: session, isPending: sessionLoading } = authClient.useSession();
   const dialogRef = useRef<HTMLDialogElement>(null);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [today, setToday] = useState<Date | null>(null);
   const [firstDay, setFirstDay] = useState(0);
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
@@ -135,12 +140,23 @@ export default function BookingModal({
   const [period, setPeriod] = useState("AM");
   const [duration, setDuration] = useState(1);
 
-  // Five days keep each date readable on a narrow phone.
   const days = today
     ? Array.from({ length: 5 }, (_, i) => addDays(today, firstDay + i))
     : [];
 
+  function goToLogin() {
+    const returnTo = window.location.pathname + window.location.search;
+    router.push(`/login?next=${encodeURIComponent(returnTo)}`);
+  }
+
   function openModal() {
+    if (sessionLoading) return;
+
+    if (!session?.user) {
+      goToLogin();
+      return;
+    }
+
     const localToday = addDays(new Date(), 0);
     const date =
       selectedDay && selectedDay >= localToday ? selectedDay : localToday;
@@ -148,7 +164,7 @@ export default function BookingModal({
     setToday(localToday);
     setSelectedDay(date);
 
-    // Use calendar dates so daylight-saving changes don't shift the strip.
+    // Compare calendar dates so daylight-saving changes don't shift the strip.
     const dayNumber = (d: Date) =>
       Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86_400_000;
     const offset = dayNumber(date) - dayNumber(localToday);
@@ -186,6 +202,13 @@ export default function BookingModal({
         },
       );
 
+      if (response.status === 401) {
+        dialogRef.current?.close();
+        toast.error("Please log in to request this booking.");
+        goToLogin();
+        return;
+      }
+
       const result = await response.json();
 
       if (!response.ok) {
@@ -208,7 +231,9 @@ export default function BookingModal({
       <button
         type="button"
         onClick={openModal}
-        className={`group inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-5 rounded-sm bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors duration-200 hover:bg-primary/85 sm:w-fit ${focusStyle}`}
+        disabled={sessionLoading}
+        aria-busy={sessionLoading}
+        className={`group inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-5 rounded-sm bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors duration-200 hover:bg-primary/85 disabled:cursor-wait disabled:opacity-60 sm:w-fit ${focusStyle}`}
       >
         Book Workspace Now
         <ArrowUpRight
@@ -236,6 +261,7 @@ export default function BookingModal({
                 {title}
               </h2>
             </div>
+
             <button
               type="button"
               aria-label="Close booking dialog"
@@ -258,6 +284,7 @@ export default function BookingModal({
                       <> – {monthFormat.format(days[4])}</>
                     )}
                   </p>
+
                   <div className="flex shrink-0">
                     <button
                       type="button"
@@ -313,6 +340,7 @@ export default function BookingModal({
           <div className="mt-6 grid gap-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-7">
             <fieldset className="min-w-0">
               <legend className={labelStyle}>Start time</legend>
+
               <div className="mt-2 grid grid-cols-[1fr_auto_1fr_1.15fr] items-center gap-1">
                 <TimeSelect
                   label="Hour"
@@ -381,6 +409,7 @@ export default function BookingModal({
               {money.format(hourlyRate * duration)}
             </p>
           </div>
+
           <div className="mt-4 flex items-baseline justify-between gap-3 border-t border-border pt-3 text-sm">
             <span className="text-muted-foreground">Security deposit</span>
             <span className="font-medium tabular-nums">
