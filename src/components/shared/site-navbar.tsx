@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   CalendarDays,
   ChevronDown,
+  Heart,
   LayoutDashboard,
   List,
   LogOut,
@@ -29,9 +30,10 @@ const navLinks = [
 
 const accountLinks = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Add New Studio", href: "/add-studio", icon: Plus },
-  { label: "My Studio Listings", href: "/my-listings", icon: List },
-  { label: "My Bookings", href: "/my-bookings", icon: CalendarDays },
+  { label: "My bookings", href: "/my-bookings", icon: CalendarDays },
+  { label: "Saved studios", href: "/saved-studios", icon: Heart },
+  { label: "My studio listings", href: "/my-listings", icon: List },
+  { label: "Add new studio", href: "/add-studio", icon: Plus },
 ];
 
 const focusStyle =

@@ -1,4 +1,6 @@
-import { Suspense } from "react";
+import { cache, Suspense } from "react";
+import { cookies } from "next/headers";
+import SaveStudioButton from "./save-studio-button";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight, Star } from "lucide-react";
@@ -15,9 +17,59 @@ export type Studio = {
 
 const gridClass = "grid gap-x-6 gap-y-9 sm:grid-cols-2 lg:grid-cols-3";
 
+const getSavedStudios = cache(async () => {
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore.toString();
+
+  if (!cookieHeader) {
+    return { signedIn: false, ids: new Set<string>() };
+  }
+
+  const response = await fetch(
+    `${process.env.API_BASE_URL}/api/saved-studios`,
+    {
+      headers: { Cookie: cookieHeader },
+      cache: "no-store",
+    },
+  );
+
+  if (response.status === 401) {
+    return { signedIn: false, ids: new Set<string>() };
+  }
+
+  if (!response.ok) {
+    throw new Error("Could not load saved studios.");
+  }
+
+  const saved: Pick<Studio, "_id">[] = await response.json();
+
+  return {
+    signedIn: true,
+    ids: new Set(saved.map((studio) => studio._id)),
+  };
+});
+
+async function StudioHeart({ studio }: { studio: Studio }) {
+  const wishlist = await getSavedStudios().catch(() => null);
+
+  if (!wishlist) return null;
+
+  return (
+    <SaveStudioButton
+      studioId={studio._id}
+      title={studio.title}
+      signedIn={wishlist.signedIn}
+      saved={wishlist.ids.has(studio._id)}
+    />
+  );
+}
+
 export function StudioCard({ studio }: { studio: Studio }) {
   return (
-    <article className="min-w-0">
+    <article className="relative min-w-0">
+      <Suspense fallback={null}>
+        <StudioHeart studio={studio} />
+      </Suspense>
       <Link
         href={`/studios/${studio._id}`}
         aria-label={`View details for ${studio.title}`}

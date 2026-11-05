@@ -7,6 +7,7 @@ import {
   CalendarDays,
   Check,
   ChevronDown,
+  Heart,
   LayoutDashboard,
   List,
   Plus,
@@ -15,6 +16,7 @@ import {
 const links = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
   { label: "My bookings", href: "/my-bookings", icon: CalendarDays },
+  { label: "Saved studios", href: "/saved-studios", icon: Heart },
   { label: "My studio listings", href: "/my-listings", icon: List },
   { label: "Add new studio", href: "/add-studio", icon: Plus },
 ];
