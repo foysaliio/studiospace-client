@@ -35,8 +35,9 @@ const supportItems = [
 export default function HostSupport() {
   return (
     <section
+      id="host-guarantee"
       aria-labelledby="host-support-heading"
-      className="bg-primary text-primary-foreground"
+      className="scroll-mt-24 bg-primary text-primary-foreground"
     >
       <div className="site-container py-12 md:py-16">
         <header>
@@ -51,31 +52,31 @@ export default function HostSupport() {
             Host guarantee &amp; creator support
           </h2>
 
-          <p className="mt-3 max-w-xs text-sm leading-6 text-primary-foreground/75 sm:text-base">
+          <p className="mt-3 max-w-md text-sm leading-6 text-primary-foreground/75 sm:text-base">
             Know who’s hosting, what’s covered, and where to turn for help.
           </p>
         </header>
 
-        <ul className="mt-7 grid gap-x-10 md:mt-8 md:grid-cols-2">
+        <ul className="mt-6 grid gap-3 sm:grid-cols-2 sm:gap-4 md:mt-8">
           {supportItems.map(({ title, description, icon: Icon }) => (
-            <li
-              key={title}
-              className="grid grid-cols-[1.5rem_minmax(0,1fr)] items-start gap-4 border-t border-primary-foreground/25 py-5 sm:py-6"
-            >
-              <Icon
-                aria-hidden="true"
-                size={22}
-                strokeWidth={1.5}
-                className="mt-1"
-              />
+            <li key={title} className="group min-w-0">
+              <div className="grid h-full grid-cols-[2.5rem_minmax(0,1fr)] items-start gap-3 rounded-sm border border-primary-foreground/20 bg-primary-foreground/5 p-4 transition-[translate,background-color,border-color] duration-300 ease-in-out group-hover:border-primary-foreground/40 group-hover:bg-primary-foreground/10 motion-safe:group-hover:-translate-y-0.5 motion-reduce:transition-none sm:gap-4 sm:p-5 lg:p-6">
+                <span
+                  aria-hidden="true"
+                  className="grid size-10 place-items-center rounded-full border border-primary-foreground/25 transition-colors duration-300 ease-in-out group-hover:border-primary-foreground group-hover:bg-primary-foreground group-hover:text-primary motion-reduce:transition-none"
+                >
+                  <Icon size={19} strokeWidth={1.5} />
+                </span>
 
-              <div>
-                <h3 className="font-heading text-2xl leading-tight tracking-tight">
-                  {title}
-                </h3>
-                <p className="mt-2 max-w-[48ch] text-sm leading-6 text-primary-foreground/75">
-                  {description}
-                </p>
+                <div className="min-w-0">
+                  <h3 className="font-heading text-2xl leading-tight tracking-tight">
+                    {title}
+                  </h3>
+
+                  <p className="mt-2 max-w-[48ch] text-sm leading-6 text-primary-foreground/75">
+                    {description}
+                  </p>
+                </div>
               </div>
             </li>
           ))}

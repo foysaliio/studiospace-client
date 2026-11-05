@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { ArrowRight, ArrowUp, ArrowUpRight, Mail } from "lucide-react";
-import type { FormEvent } from "react";
+import { useEffect, useRef, type FormEvent } from "react";
 
 import { SiteLogo } from "@/components/shared/site-logo";
 
@@ -17,8 +18,8 @@ const authorLinks = [
 const quickLinks = [
   { label: "Home", href: "/" },
   { label: "Explore Studios", href: "/studios" },
-  { label: "How It Works", href: "/how-it-works" },
-  { label: "About Us", href: "/about" },
+  { label: "How It Works", href: "/#how-booking-works" },
+  { label: "About Us", href: "/#host-guarantee" },
 ];
 
 const popularCategories = [
@@ -40,6 +41,24 @@ const headingRow = "mb-3 flex min-h-9 items-center";
 
 const navHeadingStyle = `${headingRow} text-xs font-medium uppercase tracking-widest text-muted-foreground`;
 
+function scrollBehavior(): ScrollBehavior {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ? "instant"
+    : "smooth";
+}
+
+function scrollToPageTop() {
+  document.getElementById("site-start")?.focus({ preventScroll: true });
+  window.scrollTo({ top: 0, behavior: scrollBehavior() });
+}
+
+function scrollToSection(id: string) {
+  document.getElementById(id)?.scrollIntoView({
+    behavior: scrollBehavior(),
+    block: "start",
+  });
+}
+
 function shareOnX() {
   const shareUrl = new URL("https://twitter.com/intent/tweet");
   shareUrl.searchParams.set("text", "Find a creative studio on StudioSpace.");
@@ -48,17 +67,85 @@ function shareOnX() {
   window.open(shareUrl.toString(), "_blank", "noopener,noreferrer");
 }
 
-function scrollToPageTop() {
-  const reduceMotion = window.matchMedia(
-    "(prefers-reduced-motion: reduce)",
-  ).matches;
+function FooterNavigation() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const pendingSection = useRef<string | null>(null);
 
-  document.getElementById("site-start")?.focus({ preventScroll: true });
+  // অন্য route থেকে এলে Home render হওয়ার পর section-এ scroll করো।
+  useEffect(() => {
+    const id = pendingSection.current;
+    if (pathname !== "/" || !id) return;
 
-  window.scrollTo({
-    top: 0,
-    behavior: reduceMotion ? "instant" : "smooth",
-  });
+    const frame = window.requestAnimationFrame(() => {
+      pendingSection.current = null;
+
+      if (
+        window.location.pathname === "/" &&
+        window.location.hash === `#${id}`
+      ) {
+        window.scrollTo({ top: 0, behavior: "instant" });
+        scrollToSection(id);
+      }
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [pathname]);
+
+  return (
+    <nav
+      aria-label="Footer navigation"
+      className="min-w-0 lg:col-start-2 lg:row-start-1"
+    >
+      <h2 className={navHeadingStyle}>Explore</h2>
+
+      <ul>
+        {quickLinks.map(({ label, href }) => (
+          <li key={href}>
+            <Link
+              href={href}
+              className={textLinkStyle}
+              onNavigate={(event) => {
+                pendingSection.current = null;
+
+                if (href === "/" && pathname === "/") {
+                  event.preventDefault();
+
+                  if (window.location.hash || window.location.search) {
+                    window.history.pushState(null, "", "/");
+                    window.dispatchEvent(new Event("hashchange"));
+                  }
+
+                  scrollToPageTop();
+                  return;
+                }
+
+                if (!href.startsWith("/#")) return;
+
+                event.preventDefault();
+                const id = href.slice(2);
+
+                if (pathname !== "/") {
+                  pendingSection.current = id;
+                  router.push(href, { scroll: false });
+                  return;
+                }
+
+                if (window.location.hash !== `#${id}`) {
+                  window.history.pushState(null, "", href);
+                  window.dispatchEvent(new Event("hashchange"));
+                }
+
+                scrollToSection(id);
+              }}
+            >
+              {label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
 }
 
 function NewsletterForm() {
@@ -106,7 +193,7 @@ function NewsletterForm() {
         <button
           type="submit"
           aria-label="Request newsletter updates by email"
-          className={`group inline-flex size-11 shrink-0 items-center justify-center rounded-sm bg-primary text-primary-foreground transition-colors duration-200 hover:bg-primary/85 ${focusStyle}`}
+          className={`group inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-sm bg-primary text-primary-foreground transition-colors duration-200 hover:bg-primary/85 ${focusStyle}`}
         >
           <ArrowRight
             size={17}
@@ -176,27 +263,14 @@ export function SiteFooter() {
             <NewsletterForm />
           </div>
 
-          <nav
-            aria-label="Footer navigation"
-            className="min-w-0 lg:col-start-2 lg:row-start-1"
-          >
-            <h2 className={navHeadingStyle}>Explore</h2>
-            <ul>
-              {quickLinks.map(({ label, href }) => (
-                <li key={href}>
-                  <Link href={href} className={textLinkStyle}>
-                    {label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
+          <FooterNavigation />
 
           <nav
             aria-label="Popular studio categories"
             className="min-w-0 lg:col-start-3 lg:row-start-1"
           >
             <h2 className={navHeadingStyle}>Popular categories</h2>
+
             <ul>
               {popularCategories.map(({ label, value }) => (
                 <li key={value}>
@@ -264,7 +338,7 @@ export function SiteFooter() {
             onClick={scrollToPageTop}
             aria-label="Back to top of this page"
             title="Back to top"
-            className={`group col-start-2 row-start-1 grid size-11 shrink-0 place-items-center justify-self-end rounded-full border border-border transition-colors duration-200 hover:border-primary hover:bg-primary hover:text-primary-foreground lg:col-start-3 ${focusStyle}`}
+            className={`group col-start-2 row-start-1 grid size-11 shrink-0 cursor-pointer place-items-center justify-self-end rounded-full border border-border transition-colors duration-200 hover:border-primary hover:bg-primary hover:text-primary-foreground lg:col-start-3 ${focusStyle}`}
           >
             <ArrowUp
               size={18}

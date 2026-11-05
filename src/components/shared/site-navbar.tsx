@@ -13,7 +13,7 @@ import {
   Plus,
   X,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 
 import { SiteLogo } from "@/components/shared/site-logo";
@@ -23,8 +23,8 @@ import { authClient } from "@/lib/auth-client";
 const navLinks = [
   { label: "Home", href: "/" },
   { label: "Explore Studios", href: "/studios" },
-  { label: "How It Works", href: "/how-it-works" },
-  { label: "About Us", href: "/about" },
+  { label: "How It Works", href: "/#how-booking-works" },
+  { label: "About Us", href: "/#host-guarantee" },
 ];
 
 const accountLinks = [
@@ -42,6 +42,24 @@ const buttonStyle =
 
 const menuIconStyle =
   "absolute transition-[rotate,scale,opacity] duration-300 ease-in-out motion-reduce:transition-none";
+
+function subscribeToHash(onChange: () => void) {
+  window.addEventListener("hashchange", onChange);
+  window.addEventListener("popstate", onChange);
+
+  return () => {
+    window.removeEventListener("hashchange", onChange);
+    window.removeEventListener("popstate", onChange);
+  };
+}
+
+function readHash() {
+  return window.location.hash;
+}
+
+function initialHash() {
+  return "";
+}
 
 type NavbarUser = {
   name: string;
@@ -160,7 +178,7 @@ function AccountPanel({
           type="button"
           disabled={loggingOut}
           onClick={onLogout}
-          className={`flex min-h-11 w-full items-center gap-3 rounded-sm px-2.5 text-sm text-muted-foreground transition-colors duration-200 hover:bg-accent hover:text-foreground disabled:opacity-60 ${focusStyle}`}
+          className={`flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-sm px-2.5 text-sm text-muted-foreground transition-colors duration-200 hover:bg-accent hover:text-foreground disabled:opacity-60 ${focusStyle}`}
         >
           <LogOut size={16} strokeWidth={1.5} aria-hidden="true" />
           {loggingOut ? "Logging out…" : "Logout"}
@@ -170,9 +188,168 @@ function AccountPanel({
   );
 }
 
+type MainNavigationProps = {
+  mobile?: boolean;
+  pathname: string;
+  hash: string;
+  onNavigate: () => void;
+};
+
+function MainNavigation({
+  mobile = false,
+  pathname,
+  hash,
+  onNavigate,
+}: MainNavigationProps) {
+  const router = useRouter();
+  const pendingSection = useRef<string | null>(null);
+
+  function scrollToSection(id: string) {
+    const section = document.getElementById(id);
+    if (!section) return;
+
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    section.scrollIntoView({
+      behavior: reduceMotion ? "instant" : "smooth",
+      block: "start",
+    });
+  }
+
+  // অন্য পেজ থেকে এলে Home render হওয়ার পর একবার scroll করবে।
+  useEffect(() => {
+    const id = pendingSection.current;
+    if (pathname !== "/" || !id) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      pendingSection.current = null;
+
+      // এর মধ্যে অন্য লিংকে গেলে পুরোনো scroll চালাবে না।
+      if (
+        window.location.pathname !== "/" ||
+        window.location.hash !== `#${id}`
+      ) {
+        return;
+      }
+
+      window.scrollTo({ top: 0, behavior: "instant" });
+      scrollToSection(id);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [pathname, hash]);
+
+  const selectedSection =
+    pathname === "/" &&
+    navLinks.some(
+      (link) => link.href.startsWith("/#") && link.href === `/${hash}`,
+    );
+
+  return (
+    <nav
+      aria-label={mobile ? "Mobile navigation" : "Main navigation"}
+      className={
+        mobile ? "grid grid-cols-2 gap-1" : "hidden items-center gap-6 lg:flex"
+      }
+    >
+      {navLinks.map(({ label, href }) => {
+        const isSection = href.startsWith("/#");
+
+        let active = pathname === href || pathname.startsWith(`${href}/`);
+
+        if (isSection) {
+          active = pathname === "/" && href === `/${hash}`;
+        } else if (href === "/") {
+          active = pathname === "/" && !selectedSection;
+        }
+
+        const current = active
+          ? isSection || pathname !== href
+            ? "location"
+            : "page"
+          : undefined;
+
+        const className = mobile
+          ? `flex min-h-11 items-center rounded-sm px-2 text-sm font-medium transition-colors duration-200 hover:bg-accent hover:text-foreground ${focusStyle} ${
+              active ? "bg-secondary text-foreground" : "text-muted-foreground"
+            }`
+          : `group relative inline-flex min-h-11 items-center text-sm font-medium transition-colors duration-200 hover:text-foreground ${focusStyle} ${
+              active ? "text-foreground" : "text-muted-foreground"
+            }`;
+
+        return (
+          <Link
+            key={href}
+            href={href}
+            aria-current={current}
+            className={className}
+            onNavigate={(event) => {
+              onNavigate();
+              pendingSection.current = null;
+
+              // আগের smooth scroll চলতে থাকলে বর্তমান জায়গাতেই থামাও।
+              window.scrollTo({
+                top: window.scrollY,
+                behavior: "instant",
+              });
+
+              if (!isSection) {
+                if (href === "/" && pathname === "/") {
+                  event.preventDefault();
+
+                  if (window.location.hash || window.location.search) {
+                    window.history.pushState(null, "", "/");
+                    window.dispatchEvent(new Event("hashchange"));
+                  }
+
+                  window.scrollTo({ top: 0, behavior: "instant" });
+                }
+
+                // Explore Studios তার নিজের href দিয়েই খুলবে।
+                return;
+              }
+
+              event.preventDefault();
+              const id = href.slice(2);
+
+              if (pathname !== "/") {
+                pendingSection.current = id;
+                router.push(href, { scroll: false });
+                return;
+              }
+
+              // Home-এ থাকলে URL আপডেট করেই সরাসরি animation শুরু করো।
+              if (window.location.hash !== `#${id}`) {
+                window.history.pushState(null, "", href);
+                window.dispatchEvent(new Event("hashchange"));
+              }
+
+              scrollToSection(id);
+            }}
+          >
+            {label}
+
+            {!mobile && (
+              <span
+                aria-hidden="true"
+                className={`absolute inset-x-0 bottom-1.5 h-px origin-left bg-current transition-transform duration-200 ease-out group-hover:scale-x-100 group-focus-visible:scale-x-100 motion-reduce:transition-none ${
+                  active ? "scale-x-100" : "scale-x-0"
+                }`}
+              />
+            )}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
 export function SiteNavbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const hash = useSyncExternalStore(subscribeToHash, readHash, initialHash);
   const { data: session, isPending } = authClient.useSession();
   const user = session?.user;
   const firstName = user?.name?.trim().split(/\s+/)[0] || "User";
@@ -190,12 +367,6 @@ export function SiteNavbar() {
 
   function closeMenu() {
     setOpenPanel(null);
-  }
-
-  function isActive(href: string) {
-    return (
-      pathname === href || (href !== "/" && pathname.startsWith(`${href}/`))
-    );
   }
 
   useEffect(() => {
@@ -281,30 +452,11 @@ export function SiteNavbar() {
           <SiteLogo className="font-heading text-xl tracking-tight max-lg:h-11 max-lg:gap-1.5 max-lg:leading-none max-lg:[&_svg]:size-[26px] lg:text-2xl" />
         </div>
 
-        <nav
-          aria-label="Main navigation"
-          className="hidden items-center gap-6 lg:flex"
-        >
-          {navLinks.map(({ label, href }) => (
-            <Link
-              key={href}
-              href={href}
-              onClick={closeMenu}
-              aria-current={pathname === href ? "page" : undefined}
-              className={`group relative inline-flex min-h-11 items-center text-sm font-medium transition-colors duration-200 hover:text-foreground ${focusStyle} ${
-                isActive(href) ? "text-foreground" : "text-muted-foreground"
-              }`}
-            >
-              {label}
-              <span
-                aria-hidden="true"
-                className={`absolute inset-x-0 bottom-1.5 h-px origin-left bg-current transition-transform duration-200 ease-out group-hover:scale-x-100 group-focus-visible:scale-x-100 motion-reduce:transition-none ${
-                  isActive(href) ? "scale-x-100" : "scale-x-0"
-                }`}
-              />
-            </Link>
-          ))}
-        </nav>
+        <MainNavigation
+          pathname={pathname}
+          hash={hash}
+          onNavigate={closeMenu}
+        />
 
         <div className="hidden min-w-0 items-center gap-2 lg:flex lg:justify-self-end">
           <ThemeToggle />
@@ -351,8 +503,8 @@ export function SiteNavbar() {
                   aria-hidden="true"
                   className={`shrink-0 transition-[rotate,translate,color] duration-300 ease-in-out motion-reduce:transition-none ${
                     accountOpen
-                      ? "rotate-180 translate-y-0 text-foreground"
-                      : "rotate-0 translate-y-0 text-muted-foreground motion-safe:group-hover:translate-y-px group-hover:text-foreground"
+                      ? "rotate-180 text-foreground"
+                      : "rotate-0 text-muted-foreground motion-safe:group-hover:translate-y-px group-hover:text-foreground"
                   }`}
                 />
               </button>
@@ -413,35 +565,21 @@ export function SiteNavbar() {
       <div
         id="mobile-navigation"
         inert={!mobileOpen}
-        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out motion-reduce:transition-none lg:hidden ${
+        className={`absolute inset-x-0 top-full grid bg-background transition-[grid-template-rows,opacity] duration-300 ease-in-out motion-reduce:transition-none lg:hidden ${
           mobileOpen
             ? "grid-rows-[1fr] opacity-100"
-            : "grid-rows-[0fr] opacity-0"
+            : "pointer-events-none grid-rows-[0fr] opacity-0"
         }`}
       >
         <div className="min-h-0 overflow-hidden">
-          <div className="max-h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain border-t border-border">
+          <div className="max-h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain border-y border-border">
             <div className="site-container py-3">
-              <nav
-                aria-label="Mobile navigation"
-                className="grid grid-cols-2 gap-1"
-              >
-                {navLinks.map(({ label, href }) => (
-                  <Link
-                    key={href}
-                    href={href}
-                    onClick={closeMenu}
-                    aria-current={pathname === href ? "page" : undefined}
-                    className={`flex min-h-11 items-center rounded-sm px-2 text-sm font-medium transition-colors duration-200 hover:bg-accent hover:text-foreground ${focusStyle} ${
-                      isActive(href)
-                        ? "bg-secondary text-foreground"
-                        : "text-muted-foreground"
-                    }`}
-                  >
-                    {label}
-                  </Link>
-                ))}
-              </nav>
+              <MainNavigation
+                mobile
+                pathname={pathname}
+                hash={hash}
+                onNavigate={closeMenu}
+              />
 
               <div className="mt-3 border-t border-border pt-3">
                 {isPending ? (
